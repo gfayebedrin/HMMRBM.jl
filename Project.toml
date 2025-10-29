@@ -1,0 +1,29 @@
+name = "HMMRBM"
+uuid = "bfa31696-7586-4689-9387-6c23d6d4ad35"
+version = "0.1.0"
+
+[deps]
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
+DensityInterface = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
+HiddenMarkovModels = "84ca31d5-effc-45e0-bfda-5a68cd981f47"
+RestrictedBoltzmannMachines = "12e6b396-7db5-4506-8cb6-664a4fe1e50e"
+StatsAPI = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
+StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+
+[weakdeps]
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+
+[extensions]
+HMMRBMHDF5Ext = "HDF5"
+
+[compat]
+Adapt = "3, 4"
+ArgCheck = "2"
+DensityInterface = "0.3, 0.4"
+HiddenMarkovModels = "0.6, 0.7"
+RestrictedBoltzmannMachines = "5"
+StatsAPI = "1.6, 1.7"
+StatsFuns = "1"
+HDF5 = "0.17"
+julia = "1.9"

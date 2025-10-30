@@ -1,6 +1,6 @@
-# RBMDistributions.jl
+# RBMDistribution.jl
 
-# --- RBMEmission and RBMConditional definitions ---
+# --- RBMEmission and RBMEmissionFamily definitions ---
 
 struct RBMEmission{R,H} <: Distribution
     rbm::R
@@ -13,6 +13,15 @@ struct RBMEmissionFamily{R} <: DistributionFamily{RBMEmission{R}}
     l2::Real
 end
 
+# -- Accessors ---
+
+hidden(dist::RBMEmission) = dist.hidden
+
+rbm(dist::RBMEmission) = dist.rbm
+rbm(dist::RBMEmissionFamily) = dist.rbm
+
+l2(dist::RBMEmission) = dist.l2
+l2(dist::RBMEmissionFamily) = dist.l2
 
 # --- Distribution interface ---
 
@@ -32,8 +41,8 @@ end
 
 # --- DistributionFamily interface ---
 
-function distribution(dist::RBMEmissionFamily{R}, hidden::H) where {R,H}
-    RBMEmission{R,H}(dist.rbm, hidden, dist.l2)
+function distribution(dist::RBMEmissionFamily, hidden)
+    RBMEmission(dist.rbm, hidden, dist.l2)
 end
 
 function baum_value_gradient_hessian(dist::RBMEmissionFamily, γⱼ::AbstractVector)
@@ -68,6 +77,6 @@ HMMs using RBMEmission must have hyperparameter `l2` for regularization.
 """
 function DensityInterface.logdensityof(hmm::SingleSeqHMM{<:MultiSeqHMM{<:Any,<:RBMEmissionFamily,<:Any,<:Any,<:Any,<:Any},<:Any})
     l2 = hyperparameters(hmm).l2
-    norm2 = sum(sum(abs2, d.hidden) for d in hmm.dists)
+    norm2 = sum(sum(abs2, hidden(d)) for d in obs_distributions(hmm))
     return -l2 * norm2
 end

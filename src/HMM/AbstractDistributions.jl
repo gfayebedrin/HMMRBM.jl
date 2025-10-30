@@ -10,7 +10,7 @@ abstract type Distribution end
 """
 The following functions must be defined:
 - `distribution(::DistributionFamily{T}, parameter)::T where T<:Distribution`
-- `baum_value_gradient_hessian(dist::Distribution, γ)::Function`
+- `baum_value_gradient_hessian(dist::Distribution, obs_seq, γ)::Function`
 where the returned function has signature `value_gradient_hessian(parameter)::Tuple{Real,AbstractVector,Union{AbstractMatrix,Nothing}}`
 """
 abstract type DistributionFamily{T<:Distribution} end

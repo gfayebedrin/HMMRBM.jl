@@ -45,20 +45,23 @@ function distribution(dist::RBMEmissionFamily, hidden)
     RBMEmission(dist.rbm, hidden, dist.l2)
 end
 
-function baum_value_gradient_hessian(dist::RBMEmissionFamily, γⱼ::AbstractVector)
+function baum_value_gradient_hessian(dist::RBMEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
-    gᵥ = dist.rbm.visible.par[:] # Column vector indexed by i (visible units)
-    γⱼoW = γⱼ' * reduce(hcat, obs_seq)' * dist.rbm.w # Row vector indexed by μ (hidden units)
+    rbm = rbm(dist)
+    l2 = l2(dist)
+
+    gᵥ = rbm.visible.par[:] # Column vector indexed by i (visible units)
+    γⱼoW = γⱼ' * reduce(hcat, obs_seq)' * rbm.w # Row vector indexed by μ (hidden units)
     ∑ₜγⱼₜ = sum(γⱼ)
-    ∑ₜγⱼₜWᵀ = ∑ₜγⱼₜ * dist.rbm.w' # Matrix indexed by μ (hidden units), i (visible units)
-    ∑ₜγⱼₜW²ᵀ = ∑ₜγⱼₜ * (dist.rbm.w .^ 2)' # Matrix indexed by μ (hidden units), i (visible units)
+    ∑ₜγⱼₜWᵀ = ∑ₜγⱼₜ * rbm.w' # Matrix indexed by μ (hidden units), i (visible units)
+    ∑ₜγⱼₜW²ᵀ = ∑ₜγⱼₜ * (rbm.w .^ 2)' # Matrix indexed by μ (hidden units), i (visible units)
 
     function value_gradient_hessian(hidden::AbstractVector{<:Real})
-        value = γⱼoW * hidden - ∑ₜγⱼₜ * sum(log1pexp.(gᵥ .+ dist.rbm.w * hidden)) - dist.l2 * sum(abs2, hidden) |> only
+        value = γⱼoW * hidden - ∑ₜγⱼₜ * sum(log1pexp.(gᵥ .+ rbm.w * hidden)) - l2 * sum(abs2, hidden) |> only
 
-        grad = γⱼoW' - ∑ₜγⱼₜWᵀ * σ.(gᵥ .+ dist.rbm.w * hidden) - 2dist.l2 * hidden
+        grad = γⱼoW' - ∑ₜγⱼₜWᵀ * σ.(gᵥ .+ rbm.w * hidden) - 2l2 * hidden
 
-        hess = Diagonal(-∑ₜγⱼₜW²ᵀ * σ_prime.(gᵥ .+ dist.rbm.w * hidden) .- 2dist.l2)
+        hess = Diagonal(-∑ₜγⱼₜW²ᵀ * σ_prime.(gᵥ .+ rbm.w * hidden) .- 2l2)
 
         return value, grad, hess
     end

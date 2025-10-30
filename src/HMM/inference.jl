@@ -135,7 +135,7 @@ function StatsAPI.fit!(
 
     # Compute cost, gradient, hessian as sum over sequences of those of individual sequences
     function baum(θ)
-        baums = baum_value_gradient_hessian.(dists, γsⱼ)
+        baums = baum_value_gradient_hessian.(dists, obs_sequences, γsⱼ)
         f_g_h = [baum(θ) for baum in baums]
         f = sum(getindex.(f_g_h, 1))
         g = sum(getindex.(f_g_h, 2))
@@ -148,9 +148,9 @@ function StatsAPI.fit!(
         f, g, h
     end
 
-    (; xmax) = gradient_ascent(baum, θ0)
+    (; xmax) = gradient_ascent(baum, θ0[:])
 
-    θ0 .= xmax
+    θ0[:] .= xmax
 
     return nothing
 end

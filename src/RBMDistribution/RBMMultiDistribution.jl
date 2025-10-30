@@ -42,7 +42,7 @@ parameter(dist::RBMMultiEmission) = θ(dist)
 
 function Random.rand(dist::RBMMultiEmission)
     aₖ = softmax(logits(dist))
-    k = Categorical(aₖ).rand()
+    k = rand(Categorical(aₖ))
     RestrictedBoltzmannMachines.sample_v_from_h(rbm(dist), selectdim(hiddens(dist), 1, k))
 end
 Random.rand(::AbstractRNG, dist::RBMMultiEmission) = Random.rand(dist)
@@ -61,7 +61,31 @@ function distribution(dist::RBMMultiEmissionFamily, θ)
     RBMMultiEmission(rbm(dist), θ, l2(dist))
 end
 
-function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, γⱼ::AbstractVector)
+function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
+
+    rbm = rbm(dist)
+    l2 = l2(dist)
+    
+    gᵥ = rbm.visible.par[:] # Column vector indexed by i (visible units)
+    o = reduce(hcat, obs_seq)' # Matrix indexed by t (time), i (visible units)
+    ogᵥ = o * gᵥ # Column vector indexed by t (time)
+    oW = o * rbm.w # Matrix indexed by t (time), μ (hidden units)
+
+
+    function value_gradient_hessian(θ_vec::AbstractVector{<:Real})
+
+        M = size(rbm.hidden, 2)
+        θ = similar(θ_vec, length(θ_vec) ÷ (M+1), M+1)
+        θ[:] .= θ_vec
+        logits, hiddens = unstack_vector_matrix(θ)
+        aₖ = softmax(logits)
+
+        oWhᵀ = oW * hiddens' # Matrix indexed by t (time), k (mixture components)
+
+
+    end
+
+
     error("Not implemented")
 end
 

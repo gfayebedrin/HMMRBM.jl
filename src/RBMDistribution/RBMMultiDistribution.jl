@@ -65,28 +65,45 @@ function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::Abst
 
     rbm = rbm(dist)
     l2 = l2(dist)
-    
+
+    # γⱼ: Vector indexed by t (time)
     gᵥ = rbm.visible.par[:] # Column vector indexed by i (visible units)
     o = reduce(hcat, obs_seq)' # Matrix indexed by t (time), i (visible units)
-    ogᵥ = o * gᵥ # Column vector indexed by t (time)
+    ogᵥ = o * gᵥ # Vector indexed by t (time)
     oW = o * rbm.w # Matrix indexed by t (time), μ (hidden units)
 
 
     function value_gradient_hessian(θ_vec::AbstractVector{<:Real})
 
         M = size(rbm.hidden, 2)
-        θ = similar(θ_vec, length(θ_vec) ÷ (M+1), M+1)
+        θ = similar(θ_vec, length(θ_vec) ÷ (M + 1), M + 1)
         θ[:] .= θ_vec
         logits, hiddens = unstack_vector_matrix(θ)
-        aₖ = softmax(logits)
+        log_aₖ = logits .- logsumexp(logits) # Vector indexed by k (mixture components)
 
-        oWhᵀ = oW * hiddens' # Matrix indexed by t (time), k (mixture components)
+        Whᵀ = rbm.w * hiddens' # Matrix indexed by i (visible units), k (mixture components)
+        gᵥpWhᵀ = gᵥ .+ Whᵀ # Matrix indexed by i (visible units), k (mixture components)
+        ∑ᵢlog1pexpgᵥpWhᵀ = sum(log1pexp.(gᵥpWhᵀ); dims=1) # Row vector indexed by k (mixture components)
 
+        log_prob_component = ogᵥ .+ oW * hiddens' .- ∑ᵢlog1pexpgᵥpWhᵀ # Matrix indexed by t (time), k (mixture components)
+        log_prob_state = logsumexp(log_aₖ' .+ log_prob_component; dims=2) # Column vector indexed by t (time)
+        responsability = exp.(log_aₖ' .+ log_prob_component .- log_prob_state) .- exp.(log_aₖ') # Matrix indexed by t (time), k (mixture components)
 
+        value = γⱼ ⋅ log_prob_state - l2 * sum(abs2, hiddens)
+
+        grad_logits = responsability' * γⱼ # Vector indexed by k (mixture components)
+
+        Wᵀoᵀ = rbm.w' * o' # Matrix indexed by μ (hidden units), t (time)
+        Wᵀσ = rbm.w' * σ.(gᵥpWhᵀ) # Matrix indexed by μ (hidden units), k (mixture components)
+
+        @tullio grad_hiddens[k, μ] := γⱼ[t] * responsability[t, k] * (Wᵀoᵀ[μ, t] - Wᵀσ[μ, k]) - 2l2 * hiddens[μ, k]
+
+        grad_θ_vec = stack_vector_matrix(grad_logits, grad_hiddens)[:]
+
+        return value, grad_θ_vec, nothing
     end
 
-
-    error("Not implemented")
+    return value_gradient_hessian
 end
 
 
@@ -95,7 +112,7 @@ end
 function MultiSeqHMM(; inits, transitions, rbms::AbstractVector, hiddens::AbstractArray{<:Any,3}, logits::AbstractMatrix, l2::Real=0.0)
     families = RBMMultiEmissionFamily.(rbms, l2)
     θ = stack_vector_matrix(logits, hiddens)
-    MultiSeqHMM(inits, transitions, families, θ, (;l2))
+    MultiSeqHMM(inits, transitions, families, θ, (; l2))
 end
 
 """

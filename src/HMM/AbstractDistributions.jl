@@ -21,4 +21,4 @@ function family end
 function parameter end
 
 function baum_value_gradient_hessian end
-baum_value_gradient_hessian(dist::Distribution, γ) = baum_value_gradient_hessian(family(dist), γ)
+baum_value_gradient_hessian(dist::Distribution, obs_seq, γ) = baum_value_gradient_hessian(family(dist), obs_seq, γ)

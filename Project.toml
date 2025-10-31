@@ -10,6 +10,7 @@ HiddenMarkovModels = "84ca31d5-effc-45e0-bfda-5a68cd981f47"
 RestrictedBoltzmannMachines = "12e6b396-7db5-4506-8cb6-664a4fe1e50e"
 StatsAPI = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
 StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 
 [weakdeps]
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
@@ -26,4 +27,5 @@ RestrictedBoltzmannMachines = "5"
 StatsAPI = "1.6, 1.7"
 StatsFuns = "1"
 HDF5 = "0.17"
+Tullio = "0.3.8"
 julia = "1.9"

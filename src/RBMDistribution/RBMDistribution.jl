@@ -47,21 +47,21 @@ end
 
 function baum_value_gradient_hessian(dist::RBMEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
-    rbm = rbm(dist)
-    l2 = l2(dist)
+    rbm_model = rbm(dist)
+    l2_penalty = l2(dist)
 
-    gᵥ = rbm.visible.par[:] # Column vector indexed by i (visible units)
-    γⱼoW = γⱼ' * reduce(hcat, obs_seq)' * rbm.w # Row vector indexed by μ (hidden units)
+    gᵥ = rbm_model.visible.par[:] # Column vector indexed by i (visible units)
+    γⱼoW = γⱼ' * reduce(hcat, obs_seq)' * rbm_model.w # Row vector indexed by μ (hidden units)
     ∑ₜγⱼₜ = sum(γⱼ)
-    ∑ₜγⱼₜWᵀ = ∑ₜγⱼₜ * rbm.w' # Matrix indexed by μ (hidden units), i (visible units)
-    ∑ₜγⱼₜW²ᵀ = ∑ₜγⱼₜ * (rbm.w .^ 2)' # Matrix indexed by μ (hidden units), i (visible units)
+    ∑ₜγⱼₜWᵀ = ∑ₜγⱼₜ * rbm_model.w' # Matrix indexed by μ (hidden units), i (visible units)
+    ∑ₜγⱼₜW²ᵀ = ∑ₜγⱼₜ * (rbm_model.w .^ 2)' # Matrix indexed by μ (hidden units), i (visible units)
 
     function value_gradient_hessian(hidden::AbstractVector{<:Real})
-        value = γⱼoW * hidden - ∑ₜγⱼₜ * sum(log1pexp.(gᵥ .+ rbm.w * hidden)) - l2 * sum(abs2, hidden) |> only
+        value = γⱼoW * hidden - ∑ₜγⱼₜ * sum(log1pexp.(gᵥ .+ rbm_model.w * hidden)) - l2_penalty * sum(abs2, hidden) |> only
 
-        grad = γⱼoW' - ∑ₜγⱼₜWᵀ * σ.(gᵥ .+ rbm.w * hidden) - 2l2 * hidden
+        grad = γⱼoW' - ∑ₜγⱼₜWᵀ * σ.(gᵥ .+ rbm_model.w * hidden) - 2l2_penalty * hidden
 
-        hess = Diagonal(-∑ₜγⱼₜW²ᵀ * σ_prime.(gᵥ .+ rbm.w * hidden) .- 2l2)
+        hess = Diagonal(-∑ₜγⱼₜW²ᵀ * σ_prime.(gᵥ .+ rbm_model.w * hidden) .- 2l2_penalty)
 
         return value, grad, hess
     end
@@ -69,16 +69,10 @@ function baum_value_gradient_hessian(dist::RBMEmissionFamily, obs_seq::AbstractV
     return value_gradient_hessian
 end
 
-# --- Integration with multi-sequence HMMs ---
-
-function MultiSeqHMM(; inits, transitions, rbms::AbstractVector, hiddens::AbstractMatrix, l2::Real=0.0)
-    MultiSeqHMM(inits, transitions, RBMEmissionFamily.(rbms, l2), hiddens, (;l2))
-end
-
 """
 HMMs using RBMEmission must have hyperparameter `l2` for regularization.
 """
-function DensityInterface.logdensityof(hmm::SingleSeqHMM{<:MultiSeqHMM{<:Any,<:RBMEmissionFamily,<:Any,<:Any,<:Any,<:Any},<:Any})
+function DensityInterface.logdensityof(hmm::SingleSeqHMM{<:MultiSeqHMM{<:Any,<:RBMEmissionFamily,<:Any,<:Any,<:Any},<:Any})
     l2 = hyperparameters(hmm).l2
     norm2 = sum(sum(abs2, hidden(d)) for d in obs_distributions(hmm))
     return -l2 * norm2

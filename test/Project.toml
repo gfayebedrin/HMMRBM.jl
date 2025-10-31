@@ -1,0 +1,7 @@
+[deps]
+DensityInterface = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
+HiddenMarkovModels = "84ca31d5-effc-45e0-bfda-5a68cd981f47"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+RestrictedBoltzmannMachines = "12e6b396-7db5-4506-8cb6-664a4fe1e50e"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

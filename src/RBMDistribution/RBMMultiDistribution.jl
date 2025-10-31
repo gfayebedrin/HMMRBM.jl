@@ -51,10 +51,10 @@ DensityInterface.DensityKind(::RBMMultiEmission) = DensityInterface.HasDensity()
 
 function DensityInterface.logdensityof(dist::RBMMultiEmission, obs::AbstractVector)
     aₖ = softmax(logits(dist))
-    rbm = rbm(dist)
-    hiddens = hiddens(dist)
+    rbm_model = rbm(dist)
+    hidden_states = hiddens(dist)
 
-    dot(rbm.visible.par[:], obs) + dot(obs, rbm.w, hiddens' * aₖ) - sum(log1pexp.(rbm.visible.par[:] .+ rbm.w * hiddens') * aₖ)
+    dot(rbm_model.visible.par[:], obs) + dot(obs, rbm_model.w, hidden_states' * aₖ) - sum(log1pexp.(rbm_model.visible.par[:] .+ rbm_model.w * hidden_states') * aₖ)
 end
 
 function distribution(dist::RBMMultiEmissionFamily, θ)
@@ -63,25 +63,25 @@ end
 
 function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
-    rbm = rbm(dist)
-    l2 = l2(dist)
+    rbm_model = rbm(dist)
+    l2_penalty = l2(dist)
 
     # γⱼ: Vector indexed by t (time)
-    gᵥ = rbm.visible.par[:] # Column vector indexed by i (visible units)
+    gᵥ = rbm_model.visible.par[:] # Column vector indexed by i (visible units)
     o = reduce(hcat, obs_seq)' # Matrix indexed by t (time), i (visible units)
     ogᵥ = o * gᵥ # Vector indexed by t (time)
-    oW = o * rbm.w # Matrix indexed by t (time), μ (hidden units)
+    oW = o * rbm_model.w # Matrix indexed by t (time), μ (hidden units)
 
 
     function value_gradient_hessian(θ_vec::AbstractVector{<:Real})
 
-        M = size(rbm.hidden, 2)
+        M = size(rbm_model.w, 2)
         θ = similar(θ_vec, length(θ_vec) ÷ (M + 1), M + 1)
         θ[:] .= θ_vec
         logits, hiddens = unstack_vector_matrix(θ)
         log_aₖ = logits .- logsumexp(logits) # Vector indexed by k (mixture components)
 
-        Whᵀ = rbm.w * hiddens' # Matrix indexed by i (visible units), k (mixture components)
+        Whᵀ = rbm_model.w * hiddens' # Matrix indexed by i (visible units), k (mixture components)
         gᵥpWhᵀ = gᵥ .+ Whᵀ # Matrix indexed by i (visible units), k (mixture components)
         ∑ᵢlog1pexpgᵥpWhᵀ = sum(log1pexp.(gᵥpWhᵀ); dims=1) # Row vector indexed by k (mixture components)
 
@@ -89,14 +89,14 @@ function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::Abst
         log_prob_state = logsumexp(log_aₖ' .+ log_prob_component; dims=2) # Column vector indexed by t (time)
         responsability = exp.(log_aₖ' .+ log_prob_component .- log_prob_state) .- exp.(log_aₖ') # Matrix indexed by t (time), k (mixture components)
 
-        value = γⱼ ⋅ log_prob_state - l2 * sum(abs2, hiddens)
+        value = γⱼ ⋅ log_prob_state - l2_penalty * sum(abs2, hiddens)
 
         grad_logits = responsability' * γⱼ # Vector indexed by k (mixture components)
 
-        Wᵀoᵀ = rbm.w' * o' # Matrix indexed by μ (hidden units), t (time)
-        Wᵀσ = rbm.w' * σ.(gᵥpWhᵀ) # Matrix indexed by μ (hidden units), k (mixture components)
+        Wᵀoᵀ = rbm_model.w' * o' # Matrix indexed by μ (hidden units), t (time)
+        Wᵀσ = rbm_model.w' * σ.(gᵥpWhᵀ) # Matrix indexed by μ (hidden units), k (mixture components)
 
-        @tullio grad_hiddens[k, μ] := γⱼ[t] * responsability[t, k] * (Wᵀoᵀ[μ, t] - Wᵀσ[μ, k]) - 2l2 * hiddens[μ, k]
+        @tullio grad_hiddens[k, μ] := γⱼ[t] * responsability[t, k] * (Wᵀoᵀ[μ, t] - Wᵀσ[μ, k]) - 2l2_penalty * hiddens[k, μ]
 
         grad_θ_vec = stack_vector_matrix(grad_logits, grad_hiddens)[:]
 
@@ -107,18 +107,10 @@ function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::Abst
 end
 
 
-# --- Integration with multi-sequence HMMs ---
-
-function MultiSeqHMM(; inits, transitions, rbms::AbstractVector, hiddens::AbstractArray{<:Any,3}, logits::AbstractMatrix, l2::Real=0.0)
-    families = RBMMultiEmissionFamily.(rbms, l2)
-    θ = stack_vector_matrix(logits, hiddens)
-    MultiSeqHMM(inits, transitions, families, θ, (; l2))
-end
-
 """
 HMMs using RBMMultiEmission must have hyperparameter `l2` for regularization.
 """
-function DensityInterface.logdensityof(hmm::SingleSeqHMM{<:MultiSeqHMM{<:Any,<:RBMMultiEmissionFamily,<:Any,<:Any,<:Any,<:Any},<:Any})
+function DensityInterface.logdensityof(hmm::SingleSeqHMM{<:MultiSeqHMM{<:Any,<:RBMMultiEmissionFamily,<:Any,<:Any,<:Any},<:Any})
     l2 = hyperparameters(hmm).l2
     norm2 = sum(sum(abs2, hiddens(d)) for d in obs_distributions(hmm))
     return -l2 * norm2

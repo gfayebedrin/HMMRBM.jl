@@ -108,7 +108,7 @@ function SingleSeqHMM(
     S = length(parent)
     @argcheck 1 <= sequence_index <= S "sequence_index $sequence_index out of bounds (1 ≤ index ≤ $S)"
 
-    return new{typeof(parent),I}(parent, sequence_index)
+    return SingleSeqHMM{typeof(parent),I}(parent, sequence_index)
 end
 
 # Accessors

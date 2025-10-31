@@ -8,6 +8,9 @@ using LinearAlgebra
 using StatsFuns
 using ArgCheck
 using Adapt
+using RestrictedBoltzmannMachines
+using Distributions
+using Tullio
 
 include("HMM/utils.jl")
 include("HMM/AbstractDistributions.jl")
@@ -37,6 +40,10 @@ include("RBMDistribution/utils.jl")
 include("RBMDistribution/RBMDistribution.jl")
 export RBMEmission
 export RBMEmissionFamily
+include("RBMDistribution/RBMMultiDistribution.jl")
+export RBMMultiEmission
+export RBMMultiEmissionFamily
+include("RBMDistribution/constructors.jl")
 
 include("hmm.jl")
 export hmm_rbm

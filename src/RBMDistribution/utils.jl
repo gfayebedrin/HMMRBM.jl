@@ -2,9 +2,10 @@
 σ_prime(z) = σ(z) * (one(z) - σ(z))
 
 
-function stack_vector_matrix(v::AbstractArray{T, N}, mat::AbstractArray{T, N+1}) where {T,N}
+function stack_vector_matrix(v::AbstractArray{T, N}, mat::AbstractArray{T, Np1}) where {T,N,Np1}
     (K..., M) = size(mat)
     @argcheck size(v) == K DimensionMismatch("Vector size must match matrix size except for last dimension")
+    @argcheck Np1 == N + 1 DimensionMismatch("Matrix must have one more dimension than vector")
 
     θ = similar(mat, K..., M+1)
     selectdim(θ, ndims(θ), 1) .= v
@@ -15,7 +16,7 @@ end
 
 function unstack_vector_matrix(θ::AbstractArray{T, N}) where {T,N}
     M_plus_1 = size(θ, N)
-    
+
     v = selectdim(θ, ndims(θ), 1)
     mat = selectdim(θ, ndims(θ), 2:M_plus_1)
 

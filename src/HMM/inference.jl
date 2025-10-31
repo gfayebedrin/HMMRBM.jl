@@ -25,9 +25,10 @@ function HiddenMarkovModels.baum_welch!(
     controls = [fill(nothing, length(obs_sequences[s])) for s in eachindex(obs_sequences)]
     seq_ends = [(length(obs_sequences[s]),) for s in eachindex(obs_sequences)]
     for _ in 1:max_iterations
-        for (storage, subhmm, obs_seq, ctrl, ends) in zip(fb_storages, hmm, obs_sequences, controls, seq_ends)
+        for (storage, subhmm, obs_seq, ctrl, ends) in zip(fb_storages, adapt(Array, hmm), obs_sequences, controls, seq_ends)
             HiddenMarkovModels.forward_backward!(storage, subhmm, obs_seq, ctrl; seq_ends=ends)
         end
+
         push!(logL_evolution, logdensityof(hmm) + sum(sum(fs.logL) for fs in fb_storages))
         fit!(hmm, fb_storages, obs_sequences)
         if baum_welch_has_converged(logL_evolution; atol, loglikelihood_increasing)
@@ -56,6 +57,7 @@ function HiddenMarkovModels.baum_welch(
     loglikelihood_increasing=true,
 )
     hmm = deepcopy(hmm_guess)
+
     fb_storages = [
         HiddenMarkovModels.initialize_forward_backward(
             hmm[s],

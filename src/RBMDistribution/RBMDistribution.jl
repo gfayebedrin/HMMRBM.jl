@@ -35,7 +35,7 @@ Random.rand(::AbstractRNG, dist::RBMEmission) = Random.rand(dist)
 DensityInterface.DensityKind(::RBMEmission) = DensityInterface.HasDensity()
 
 function DensityInterface.logdensityof(dist::RBMEmission, obs::AbstractVector)
-    dot(dist.rbm.visible.par[:], obs) + dot(obs, dist.rbm.w, dist.hidden) - sum(log1pexp.(dist.rbm.visible.par[:] .+ dist.rbm.w * dist.hidden))
+    dot(rbm(dist).visible.par, obs) + dot(obs, rbm(dist).w, hidden(dist)) - sum(log1pexp.(rbm(dist).visible.par[:] .+ rbm(dist).w * hidden(dist)))
 end
 
 

@@ -118,19 +118,20 @@ hyperparameters(hmm::SingleSeqHMM) = hyperparameters(parent(hmm))
 
 # Interface
 function HiddenMarkovModels.initialization(hmm::SingleSeqHMM)
-    return hmm.parent.inits[hmm.sequence_index]
+    return inits(parent(hmm))[sequence_index(hmm)]
 end
 
 function HiddenMarkovModels.transition_matrix(hmm::SingleSeqHMM)
-    return hmm.parent.transitions[hmm.sequence_index]
+    return transitions(parent(hmm))[sequence_index(hmm)]
 end
 
 function HiddenMarkovModels.obs_distributions(hmm::SingleSeqHMM)
+    θ = emission_parameters(parent(hmm))
     return [
         distribution(
-            hmm.parent.emissions[hmm.sequence_index],
-            selectdim(hmm.parent.θ, 1, s)
+            emissions(parent(hmm))[sequence_index(hmm)],
+            selectdim(θ, 1, s)
         )
-        for s in 1:size(hmm.parent.θ, 1)
+        for s in 1:size(θ, 1)
     ]
 end

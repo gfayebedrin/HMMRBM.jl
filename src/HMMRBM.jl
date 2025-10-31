@@ -10,7 +10,6 @@ using ArgCheck
 using Adapt
 using RestrictedBoltzmannMachines
 using Distributions
-using Tullio
 
 include("HMM/utils.jl")
 include("HMM/AbstractDistributions.jl")

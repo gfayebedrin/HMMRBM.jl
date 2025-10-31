@@ -88,15 +88,15 @@ function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::Abst
         log_prob_component = ogᵥ .+ oW * hiddens' .- ∑ᵢlog1pexpgᵥpWhᵀ # Matrix indexed by t (time), k (mixture components)
         log_prob_state = logsumexp(log_aₖ' .+ log_prob_component; dims=2) # Column vector indexed by t (time)
         responsability = exp.(log_aₖ' .+ log_prob_component .- log_prob_state) .- exp.(log_aₖ') # Matrix indexed by t (time), k (mixture components)
+        γresp = γⱼ .* responsability # Matrix indexed by t (time), k (mixture components)
 
         value = γⱼ ⋅ log_prob_state - l2_penalty * sum(abs2, hiddens)
 
-        grad_logits = responsability' * γⱼ # Vector indexed by k (mixture components)
+        grad_logits = vec(sum(γresp, dims=1)) # Vector indexed by k (mixture components)
 
-        Wᵀoᵀ = rbm_model.w' * o' # Matrix indexed by μ (hidden units), t (time)
         Wᵀσ = rbm_model.w' * σ.(gᵥpWhᵀ) # Matrix indexed by μ (hidden units), k (mixture components)
 
-        @tullio grad_hiddens[k, μ] := γⱼ[t] * responsability[t, k] * (Wᵀoᵀ[μ, t] - Wᵀσ[μ, k]) - 2l2_penalty * hiddens[k, μ]
+        grad_hiddens = γresp' * oW .- grad_logits .* Wᵀσ' .- 2l2_penalty * hiddens
 
         grad_θ_vec = stack_vector_matrix(grad_logits, grad_hiddens)[:]
 

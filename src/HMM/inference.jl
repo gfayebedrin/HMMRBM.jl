@@ -21,10 +21,13 @@ function HiddenMarkovModels.baum_welch!(
     atol::Real,
     max_iterations::Integer,
     loglikelihood_increasing::Bool,
+    callback=(x->nothing),
 )
     controls = [fill(nothing, length(obs_sequences[s])) for s in eachindex(obs_sequences)]
     seq_ends = [(length(obs_sequences[s]),) for s in eachindex(obs_sequences)]
-    for _ in 1:max_iterations
+    for iteration in 1:max_iterations
+        callback((;iteration, logL_evolution))
+
         for (storage, subhmm, obs_seq, ctrl, ends) in zip(fb_storages, adapt(Array, hmm), obs_sequences, controls, seq_ends)
             HiddenMarkovModels.forward_backward!(storage, subhmm, obs_seq, ctrl; seq_ends=ends)
         end
@@ -55,6 +58,7 @@ function HiddenMarkovModels.baum_welch(
     atol=1e-5,
     max_iterations=100,
     loglikelihood_increasing=true,
+    callback=(x->nothing),
 )
     hmm = deepcopy(hmm_guess)
 
@@ -77,6 +81,7 @@ function HiddenMarkovModels.baum_welch(
         atol,
         max_iterations,
         loglikelihood_increasing,
+        callback,
     )
     return hmm, logL_evolution
 end

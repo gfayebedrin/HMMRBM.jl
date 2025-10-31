@@ -14,7 +14,7 @@ function baum_welch_has_converged(
 end
 
 function HiddenMarkovModels.baum_welch!(
-    fb_storages::Vector{HiddenMarkovModels.ForwardBackwardStorage},
+    fb_storages::Vector{<:HiddenMarkovModels.ForwardBackwardStorage},
     logL_evolution::Vector,
     hmm::MultiSeqHMM,
     obs_sequences::AbstractVector{<:AbstractVector};
@@ -22,10 +22,14 @@ function HiddenMarkovModels.baum_welch!(
     max_iterations::Integer,
     loglikelihood_increasing::Bool,
 )
+    controls = [fill(nothing, length(obs_sequences[s])) for s in eachindex(obs_sequences)]
+    seq_ends = [(length(obs_sequences[s]),) for s in eachindex(obs_sequences)]
     for _ in 1:max_iterations
-        HiddenMarkovModels.forward_backward!.(fb_storages, hmm, obs_sequences)
+        for (storage, subhmm, obs_seq, ctrl, ends) in zip(fb_storages, hmm, obs_sequences, controls, seq_ends)
+            HiddenMarkovModels.forward_backward!(storage, subhmm, obs_seq, ctrl; seq_ends=ends)
+        end
         push!(logL_evolution, logdensityof(hmm) + sum(sum(fs.logL) for fs in fb_storages))
-        fit!(hmm, fb_storage, obs_seq, control_seq; seq_ends)
+        fit!(hmm, fb_storages, obs_sequences)
         if baum_welch_has_converged(logL_evolution; atol, loglikelihood_increasing)
             break
         end
@@ -52,15 +56,18 @@ function HiddenMarkovModels.baum_welch(
     loglikelihood_increasing=true,
 )
     hmm = deepcopy(hmm_guess)
-    fb_storages = HiddenMarkovModels.initialize_forward_backward.(
-        hmm,
-        obs_sequences,
-        fill.(nothing, length.(obs_sequences));
-        seq_ends=tuple.(length.(obs_sequences))
-    )
+    fb_storages = [
+        HiddenMarkovModels.initialize_forward_backward(
+            hmm[s],
+            obs_sequences[s],
+            fill(nothing, length(obs_sequences[s]));
+            seq_ends=(length(obs_sequences[s]),),
+        )
+        for s in eachindex(obs_sequences)
+    ]
     logL_evolution = eltype(fb_storages).parameters[1][]
     sizehint!(logL_evolution, max_iterations)
-    baum_welch!(
+    HiddenMarkovModels.baum_welch!(
         fb_storages,
         logL_evolution,
         hmm,
@@ -75,7 +82,7 @@ end
 
 function StatsAPI.fit!(
     hmm::MultiSeqHMM,
-    fb_storages::Vector{HiddenMarkovModels.ForwardBackwardStorage},
+    fb_storages::Vector{<:HiddenMarkovModels.ForwardBackwardStorage},
     obs_sequences::AbstractVector{<:AbstractVector},
 )
     γs = getproperty.(fb_storages, :γ)
@@ -110,7 +117,7 @@ function StatsAPI.fit!(
     end
 
     # Safety check
-    @argcheck valid_hmm(hmm)
+    @argcheck HiddenMarkovModels.valid_hmm(hmm)
 
     return nothing
 end

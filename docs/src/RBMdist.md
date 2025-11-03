@@ -11,5 +11,4 @@ HMMRBM.RBMEmissionFamily
 HMMRBM.RBMEmission
 HMMRBM.RBMMultiEmissionFamily
 HMMRBM.RBMMultiEmission
-HMMRBM.baum_value_gradient_hessian
 ```

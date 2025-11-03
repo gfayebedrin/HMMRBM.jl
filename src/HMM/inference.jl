@@ -115,7 +115,7 @@ function StatsAPI.fit!(
     end
 
     # Fit observations
-    Threads.@threads for j in 1:state_count(hmm)
+    for j in 1:state_count(hmm)
         fit!(
             distribution.(emissions(hmm), Ref(selectdim(emission_parameters(hmm), 1, j))),
             obs_sequences,

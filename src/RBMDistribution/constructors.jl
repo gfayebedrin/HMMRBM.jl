@@ -4,28 +4,12 @@
 """
     MultiSeqHMM(; inits, transitions, rbms, hiddens, l2=0.0, logits=nothing)
 
-Construct a `MultiSeqHMM` whose emission distributions are parameterised by a set of
-Restricted Boltzmann Machines (RBMs).
-
-# Arguments
-- `inits`: vector of initial state probability vectors, one per observed sequence.
-- `transitions`: vector of square transition matrices matching `inits`.
-- `rbms`: vector of RBM models (from `RestrictedBoltzmannMachines.jl`), one per sequence.
-- `hiddens`: state-parameter arrays shared across sequences. Provide a matrix of size
-  `(num_states, hidden_dim)` when `logits === nothing`, or a 3D array of size
-  `(num_states, num_components, hidden_dim)` when supplying mixture logits.
-- `l2`: non-negative ℓ2 penalty applied to hidden-state parameters during training (stored
-  in the model hyperparameters).
-- `logits`: optional matrix of unnormalised mixture weights `(num_states, num_components)` that
-  activates the multi-component emission family.
-
-All collections must have the same length and consistent element types. When `logits` are
-omitted the constructor builds `RBMEmission` distributions; otherwise it builds
-`RBMMultiEmission` distributions and stacks the logits/hidden states into the shared
-parameter tensor.
-
-# Returns
-A `MultiSeqHMM` ready to be passed to routines such as `HiddenMarkovModels.baum_welch`.
+Construct a multi-sequence hidden Markov model whose emission distributions are driven by
+Restricted Boltzmann Machine parameters. The keyword arguments fill the per-sequence
+initial distributions and transition matrices, select one RBM per sequence, and provide
+the shared hidden-state parameters. When `logits` are omitted, a single hidden vector per
+state is assumed; supplying logits activates mixture emissions. The `l2` keyword stores
+the regularisation strength in the resulting model.
 """
 function MultiSeqHMM(;
     inits,

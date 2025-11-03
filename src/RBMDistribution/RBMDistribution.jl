@@ -2,12 +2,24 @@
 
 # --- RBMEmission and RBMEmissionFamily definitions ---
 
+"""
+    RBMEmission(rbm, hidden, l2)
+
+Concrete emission distribution backed by an RBM and a single hidden vector. The `l2`
+value stores the regularisation strength used during training.
+"""
 struct RBMEmission{R,H} <: Distribution
     rbm::R
     hidden::H
     l2::Real
 end
 
+"""
+    RBMEmissionFamily(rbm, l2)
+
+Distribution family that turns hidden vectors into `RBMEmission` instances using the
+supplied RBM and regularisation coefficient.
+"""
 struct RBMEmissionFamily{R} <: DistributionFamily{RBMEmission{R}}
     rbm::R
     l2::Real
@@ -45,6 +57,14 @@ function distribution(dist::RBMEmissionFamily, hidden)
     RBMEmission(dist.rbm, hidden, dist.l2)
 end
 
+"""
+    baum_value_gradient_hessian(dist, obs_seq, γ)
+
+Prepare the objective, gradient, and Hessian evaluations required by the Baum–Welch
+update for a single HMM state. The returned closure accepts a hidden vector and produces
+the corresponding value, gradient, and optional Hessian information with respect to that
+vector.
+"""
 function baum_value_gradient_hessian(dist::RBMEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
     rbm_model = rbm(dist)

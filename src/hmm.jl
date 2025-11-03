@@ -1,3 +1,11 @@
+"""
+    hmm_rbm(rbms, n_states; l2=0.0)
+
+Create a `MultiSeqHMM` that ties each observed sequence to one RBM while sharing a common
+number of hidden Markov states. Initial probabilities and transition matrices are seeded
+with simple defaults, and the returned model stores the provided ℓ2 regularisation value
+in its hyperparameters.
+"""
 function hmm_rbm(rbms::AbstractVector, n_states::Integer; l2::Real=0.0)
 
     _size_hidden = unique(size.(getfield.(rbms, :hidden)))

@@ -1,21 +1,18 @@
 # Multi-sequence Hidden Markov Models
 
-`MultiSeqHMM` wraps several single-sequence HMMs `SingleSeqHMM` that share emission parameters. It describes one initial distribution and transition matrix for each observed sequence, while the emission parameter is shared.
+HMMRBM extends `HiddenMarkovModels.jl` with multi-sequence containers that reuse the same
+emission parameters across several observation streams. Each sequence keeps its own
+initial distribution and transition matrix, while a shared parameter tensor drives the
+Restricted Boltzmann Machine emissions.
 
-## Types
-
-```@docs
-MultiSeqHMM
-```
-
-```@docs
-SingleSeqHMM
-```
+## API reference
 
 ```@docs
-Distribution
-```
-
-```@docs
-DistributionFamily
+HMMRBM.MultiSeqHMM
+HMMRBM.SingleSeqHMM
+HMMRBM.hmm_rbm
+HMMRBM.MultiSeqHMM_to_group!
+HMMRBM.MultiSeqHMM_from_group
+HMMRBM.save_hmm
+HMMRBM.load_hmm
 ```

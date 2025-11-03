@@ -2,12 +2,24 @@
 
 # --- RBMMultiEmission and RBMMultiEmissionFamily definitions ---
 
+"""
+    RBMMultiEmission(rbm, θ, l2)
+
+Emission distribution representing an RBM backed mixture. The stacked parameter `θ`
+contains logits and hidden vectors, while `l2` records the regularisation strength.
+"""
 struct RBMMultiEmission{R,Θ} <: Distribution
     rbm::R
     θ::Θ
     l2::Real
 end
 
+"""
+    RBMMultiEmissionFamily(rbm, l2)
+
+Distribution family that converts stacked logits and hidden vectors into
+`RBMMultiEmission` instances.
+"""
 struct RBMMultiEmissionFamily{R} <: DistributionFamily{RBMMultiEmission{R}}
     rbm::R
     l2::Real
@@ -61,6 +73,13 @@ function distribution(dist::RBMMultiEmissionFamily, θ)
     RBMMultiEmission(rbm(dist), θ, l2(dist))
 end
 
+"""
+    baum_value_gradient_hessian(dist, obs_seq, γ)
+
+Return a closure that evaluates the Baum–Welch objective and gradient with respect to the
+stacked logits and hidden vectors used by a mixture RBM emission family. The Hessian is
+omitted for this variant.
+"""
 function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
     rbm_model = rbm(dist)

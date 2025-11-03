@@ -52,9 +52,33 @@ export MultiSeqHMM_from_group
 export save_hmm
 export load_hmm
 
+"""
+    MultiSeqHMM_to_group!(group, hmm; kwargs...)
+
+Persist a `MultiSeqHMM` into an HDF5 group and optionally store metadata in a dedicated
+`info` subgroup.
+"""
 function MultiSeqHMM_to_group! end
+"""
+    MultiSeqHMM_from_group(group; emissions)
+
+Rebuild a `MultiSeqHMM` from datasets stored in an HDF5 group. The caller supplies the
+emission families that match the stored parameters.
+"""
 function MultiSeqHMM_from_group end
+"""
+    save_hmm(hmm, filename; kwargs...)
+
+Write a `MultiSeqHMM` to an HDF5 file, forwarding keyword arguments to
+`MultiSeqHMM_to_group!`.
+"""
 function save_hmm end
+"""
+    load_hmm(filename; emissions)
+
+Load a `MultiSeqHMM` from an HDF5 file by reading the saved arrays and pairing them with
+the provided emission families.
+"""
 function load_hmm end
 
 end

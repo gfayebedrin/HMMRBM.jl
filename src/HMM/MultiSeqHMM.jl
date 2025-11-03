@@ -2,17 +2,28 @@
 
 # --- MultiSeqHMM and SingleSeqHMM definitions ---
 
+"""
+    struct SingleSeqHMM{T,I<:Integer} <: AbstractHMM
+
+A single-sequence Hidden Markov Model (HMM) view into a `MultiSeqHMM`.
+"""
 struct SingleSeqHMM{T,I<:Integer} <: AbstractHMM
     parent::T
     sequence_index::I
 end
 
 """
+    struct MultiSeqHMM{T,F,AV,AM,Aθ} <: AbstractVector{SingleSeqHMM{MultiSeqHMM{T,F,AV,AM,Aθ},Int}}
+
+A multi-sequence Hidden Markov Model (HMM) whose emission distributions share parameters across sequences.
+
+It acts as a collection of single-sequence HMMs (`SingleSeqHMM`), one per observed sequence.
+
 Type `F` is the emission distribution family type and must implement `distribution(::F, parameter)`.
 
 The returned distribution type must implement:
-- `Random.rand(::AbstractRNG, dist::Distribution)`
-- `DensityInterface.logdensityof(dist::Distribution, obs)`
+- `Random.rand(::AbstractRNG, dist)`
+- `DensityInterface.logdensityof(dist, obs)`
 """
 struct MultiSeqHMM{T,F,AV,AM,Aθ} <: AbstractVector{SingleSeqHMM{MultiSeqHMM{T,F,AV,AM,Aθ},Int}}
     inits::Vector{AV}
@@ -24,6 +35,11 @@ struct MultiSeqHMM{T,F,AV,AM,Aθ} <: AbstractVector{SingleSeqHMM{MultiSeqHMM{T,F
     hyperparameters::NamedTuple
 
 
+    """
+        MultiSeqHMM(inits, transitions, emissions, θ; hyperparameters=NamedTuple())
+
+    Construct a `MultiSeqHMM` instance.
+    """
     function MultiSeqHMM(
         inits::Vector{AV},
         transitions::Vector{AM},
@@ -67,14 +83,61 @@ end
 # --- MultiSeqHMM methods ---
 
 # Accessors
+
+"""
+    inits(hmm::MultiSeqHMM)
+
+Get the vector of initial state distributions for each sequence.
+"""
 inits(hmm::MultiSeqHMM) = hmm.inits
+
+"""
+    loginits(hmm::MultiSeqHMM)
+
+Get the vector of log initial state distributions for each sequence.
+"""
 loginits(hmm::MultiSeqHMM) = hmm.loginits
+
+"""
+    transitions(hmm::MultiSeqHMM)
+
+Get the vector of transition matrices for each sequence.
+"""
 transitions(hmm::MultiSeqHMM) = hmm.transitions
+
+"""
+    logtransitions(hmm::MultiSeqHMM)
+
+Get the vector of log transition matrices for each sequence.
+"""
 logtransitions(hmm::MultiSeqHMM) = hmm.logtransitions
+
+"""
+    emissions(hmm::MultiSeqHMM)
+
+Get the vector of emission distribution families for each sequence.
+"""
 emissions(hmm::MultiSeqHMM) = hmm.emissions
+
+"""
+    emission_parameters(hmm::MultiSeqHMM)
+
+Get the shared emission parameters for the HMM.
+"""
 emission_parameters(hmm::MultiSeqHMM) = hmm.θ
+
+"""
+    hyperparameters(hmm::MultiSeqHMM)
+
+Get the hyperparameters `NamedTuple` for the HMM.
+"""
 hyperparameters(hmm::MultiSeqHMM) = hmm.hyperparameters
 
+"""
+    state_count(hmm::MultiSeqHMM)
+
+Get the number of hidden states in the HMM.
+"""
 state_count(hmm::MultiSeqHMM) = size(emission_parameters(hmm), 1)
 
 # Interface
@@ -114,10 +177,30 @@ function SingleSeqHMM(
 end
 
 # Accessors
+"""
+    parent(hmm::SingleSeqHMM)
+
+Get the parent `MultiSeqHMM` of the single-sequence HMM.
+"""
 parent(hmm::SingleSeqHMM) = hmm.parent
+
+"""
+    sequence_index(hmm::SingleSeqHMM)
+
+Get the sequence index of the single-sequence HMM within its parent `MultiSeqHMM`.
+"""
 sequence_index(hmm::SingleSeqHMM) = hmm.sequence_index
+
+"""
+    inits(hmm::SingleSeqHMM)
+
+Get the initial state distribution for the single-sequence HMM.
+"""
 hyperparameters(hmm::SingleSeqHMM) = hyperparameters(parent(hmm))
 
+"""
+    state_count(hmm::SingleSeqHMM)
+"""
 state_count(hmm::SingleSeqHMM) = state_count(parent(hmm))
 
 # Interface

@@ -47,6 +47,11 @@ include("RBMDistribution/constructors.jl")
 include("hmm.jl")
 export hmm_rbm
 
+export MultiSeqHMM_to_group!
+export MultiSeqHMM_from_group
+export save_hmm
+export load_hmm
+
 function MultiSeqHMM_to_group! end
 function MultiSeqHMM_from_group end
 function save_hmm end

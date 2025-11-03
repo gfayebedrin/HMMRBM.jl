@@ -3,11 +3,9 @@ module HMMRBMHDF5Ext
 using HMMRBM
 using HDF5
 
-import HMMRBM: MultiSeqHMM_to_group!, MultiSeqHMM_from_group, save_hmm, load_hmm
-
 const _HDF5Parent = Union{HDF5.File,HDF5.Group}
 
-function MultiSeqHMM_to_group!(group::_HDF5Parent, hmm::HMMRBM.MultiSeqHMM; kwargs...)
+function HMMRBM.MultiSeqHMM_to_group!(group::_HDF5Parent, hmm::HMMRBM.MultiSeqHMM; kwargs...)
     inits_group = create_group(group, "inits")
     for (i, init) in enumerate(HMMRBM.inits(hmm))
         write(inits_group, "init_$i", init)
@@ -33,7 +31,7 @@ function MultiSeqHMM_to_group!(group::_HDF5Parent, hmm::HMMRBM.MultiSeqHMM; kwar
     return group
 end
 
-function MultiSeqHMM_from_group(group::_HDF5Parent; emissions)
+function HMMRBM.MultiSeqHMM_from_group(group::_HDF5Parent; emissions)
     inits_group = open_group(group, "inits")
     inits = [read(inits_group, "init_$i") for i in 1:length(inits_group)]
 
@@ -48,15 +46,15 @@ function MultiSeqHMM_from_group(group::_HDF5Parent; emissions)
     return HMMRBM.MultiSeqHMM(inits, transitions, emissions, θ, hyperparameters)
 end
 
-function save_hmm(hmm::HMMRBM.MultiSeqHMM, filename::String; kwargs...)
+function HMMRBM.save_hmm(hmm::HMMRBM.MultiSeqHMM, filename::String; kwargs...)
     h5open(filename, "w") do file
-        MultiSeqHMM_to_group!(file, hmm; kwargs...)
+        HMMRBM.MultiSeqHMM_to_group!(file, hmm; kwargs...)
     end
 end
 
-function load_hmm(filename::String; emissions)
+function HMMRBM.load_hmm(filename::String; emissions)
     h5open(filename, "r") do file
-        MultiSeqHMM_from_group(file; emissions)
+        HMMRBM.MultiSeqHMM_from_group(file; emissions)
     end
 end
 

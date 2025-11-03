@@ -75,6 +75,8 @@ emissions(hmm::MultiSeqHMM) = hmm.emissions
 emission_parameters(hmm::MultiSeqHMM) = hmm.θ
 hyperparameters(hmm::MultiSeqHMM) = hmm.hyperparameters
 
+state_count(hmm::MultiSeqHMM) = size(emission_parameters(hmm), 1)
+
 # Interface
 Base.size(hmm::MultiSeqHMM) = (length(inits(hmm)),)
 Base.getindex(hmm::MultiSeqHMM, s::Integer) = SingleSeqHMM(hmm, Int(s))
@@ -115,6 +117,8 @@ end
 parent(hmm::SingleSeqHMM) = hmm.parent
 sequence_index(hmm::SingleSeqHMM) = hmm.sequence_index
 hyperparameters(hmm::SingleSeqHMM) = hyperparameters(parent(hmm))
+
+state_count(hmm::SingleSeqHMM) = state_count(parent(hmm))
 
 # Interface
 function HiddenMarkovModels.initialization(hmm::SingleSeqHMM)

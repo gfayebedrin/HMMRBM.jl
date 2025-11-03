@@ -21,14 +21,14 @@ function HiddenMarkovModels.baum_welch!(
     atol::Real,
     max_iterations::Integer,
     loglikelihood_increasing::Bool,
-    callback=(x->nothing),
+    callback=(x -> nothing),
 )
     controls = [fill(nothing, length(obs_sequences[s])) for s in eachindex(obs_sequences)]
     seq_ends = [(length(obs_sequences[s]),) for s in eachindex(obs_sequences)]
     for iteration in 1:max_iterations
-        callback((;iteration, logL_evolution))
+        callback((; iteration, logL_evolution))
 
-        for (storage, subhmm, obs_seq, ctrl, ends) in zip(fb_storages, adapt(Array, hmm), obs_sequences, controls, seq_ends)
+        Threads.@threads for (storage, subhmm, obs_seq, ctrl, ends) in zip(fb_storages, adapt(Array, hmm), obs_sequences, controls, seq_ends) |> collect
             HiddenMarkovModels.forward_backward!(storage, subhmm, obs_seq, ctrl; seq_ends=ends)
         end
 
@@ -58,7 +58,7 @@ function HiddenMarkovModels.baum_welch(
     atol=1e-5,
     max_iterations=100,
     loglikelihood_increasing=true,
-    callback=(x->nothing),
+    callback=(x -> nothing),
 )
     hmm = deepcopy(hmm_guess)
 
@@ -96,14 +96,14 @@ function StatsAPI.fit!(
     ξs = getproperty.(fb_storages, :ξ)
 
     # Fit inits
-    for (γ, init, loginit) in zip(γs, inits(hmm), loginits(hmm))
+    Threads.@threads for (γ, init, loginit) in zip(γs, inits(hmm), loginits(hmm)) |> collect
         sum!(init, γ)
         sum_to_one!(init)
         loginit .= log.(init)
     end
 
     # Fit transitions
-    for (ξ, trans, logtrans) in zip(ξs, transitions(hmm), logtransitions(hmm))
+    Threads.@threads for (ξ, trans, logtrans) in zip(ξs, transitions(hmm), logtransitions(hmm)) |> collect
         scratch = ξ[end]  # use ξ[end] as scratch space since it is zero anyway
         fill!(scratch, zero(eltype(scratch)))
         for t in 1:(length(ξ)-1)
@@ -115,13 +115,14 @@ function StatsAPI.fit!(
     end
 
     # Fit observations
-    for i in 1:length(hmm)
+    Threads.@threads for j in 1:state_count(hmm)
         fit!(
-            distribution.(hmm.emissions, Ref(selectdim(emission_parameters(hmm), 1, i))),
+            distribution.(emissions(hmm), Ref(selectdim(emission_parameters(hmm), 1, j))),
             obs_sequences,
-            view.(γs, i, :)
+            view.(γs, j, :)
         )
     end
+
 
     # Safety check
     @argcheck HiddenMarkovModels.valid_hmm(hmm)

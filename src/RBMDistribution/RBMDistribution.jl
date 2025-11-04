@@ -47,7 +47,7 @@ Random.rand(::AbstractRNG, dist::RBMEmission) = Random.rand(dist)
 DensityInterface.DensityKind(::RBMEmission) = DensityInterface.HasDensity()
 
 function DensityInterface.logdensityof(dist::RBMEmission, obs::AbstractVector)
-    dot(rbm(dist).visible.par, obs) + dot(obs, rbm(dist).w, hidden(dist)) - sum(log1pexp.(rbm(dist).visible.par[:] .+ rbm(dist).w * hidden(dist)))
+    -RestrictedBoltzmannMachines.energy(rbm(dist), obs, hidden(dist)) + RestrictedBoltzmannMachines.free_energy_h(rbm(dist), hidden(dist))
 end
 
 
@@ -67,21 +67,13 @@ vector.
 """
 function baum_value_gradient_hessian(dist::RBMEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
-    rbm_model = rbm(dist)
-    l2_penalty = l2(dist)
-
-    gᵥ = rbm_model.visible.par[:] # Column vector indexed by i (visible units)
-    γⱼoW = γⱼ' * reduce(hcat, obs_seq)' * rbm_model.w # Row vector indexed by μ (hidden units)
+    obs_mat = reduce(hcat, obs_seq)
     ∑ₜγⱼₜ = sum(γⱼ)
-    ∑ₜγⱼₜWᵀ = ∑ₜγⱼₜ * rbm_model.w' # Matrix indexed by μ (hidden units), i (visible units)
-    ∑ₜγⱼₜW²ᵀ = ∑ₜγⱼₜ * (rbm_model.w .^ 2)' # Matrix indexed by μ (hidden units), i (visible units)
 
-    function value_gradient_hessian(hidden::AbstractVector{<:Real})
-        value = γⱼoW * hidden - ∑ₜγⱼₜ * sum(log1pexp.(gᵥ .+ rbm_model.w * hidden)) - l2_penalty * sum(abs2, hidden) |> only
-
-        grad = γⱼoW' - ∑ₜγⱼₜWᵀ * σ.(gᵥ .+ rbm_model.w * hidden) - 2l2_penalty * hidden
-
-        hess = Diagonal(-∑ₜγⱼₜW²ᵀ * σ_prime.(gᵥ .+ rbm_model.w * hidden) .- 2l2_penalty)
+    function value_gradient_hessian(h::AbstractVector{<:Real})
+        value = γⱼ ⋅ (RestrictedBoltzmannMachines.free_energy_h(rbm(dist), h) .- RestrictedBoltzmannMachines.energy(rbm(dist), obs_mat, h)) - l2(dist) * sum(abs2, h)
+        grad = ∂ₕlog_P_v_given_h(rbm(dist), obs_mat, h) * γⱼ .- 2 * l2(dist) * h
+        hess = ∂ₕ²log_P_v_given_h(rbm(dist), obs_mat, h) * ∑ₜγⱼₜ - 2 * l2(dist) * I
 
         return value, grad, hess
     end

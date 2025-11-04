@@ -22,9 +22,9 @@ Returns a named tuple:
      niter = ...)     # iterations actually executed
 """
 function gradient_descent(value_gradient_hessian, x0;
-    lr=1e-2,
-    maxiter=1_000,
-    tol=1e-6,
+    lr=1e-1,
+    maxiter=100,
+    tol=1e-3,
 )
 
     x = copy(x0)

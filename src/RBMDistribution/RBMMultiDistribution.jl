@@ -62,11 +62,10 @@ Random.rand(::AbstractRNG, dist::RBMMultiEmission) = Random.rand(dist)
 DensityInterface.DensityKind(::RBMMultiEmission) = DensityInterface.HasDensity()
 
 function DensityInterface.logdensityof(dist::RBMMultiEmission, obs::AbstractVector)
-    aₖ = softmax(logits(dist))
-    rbm_model = rbm(dist)
-    hidden_states = hiddens(dist)
-
-    dot(rbm_model.visible.par[:], obs) + dot(obs, rbm_model.w, hidden_states' * aₖ) - sum(log1pexp.(rbm_model.visible.par[:] .+ rbm_model.w * hidden_states') * aₖ)
+    log_aₖ = logits(dist) .- logsumexp(logits(dist))
+    E = -RestrictedBoltzmannMachines.energy(rbm(dist), obs, hiddens(dist)')
+    F = RestrictedBoltzmannMachines.free_energy_h(rbm(dist), hiddens(dist)')
+    logsumexp(log_aₖ + F - E)
 end
 
 function distribution(dist::RBMMultiEmissionFamily, θ)
@@ -82,40 +81,33 @@ omitted for this variant.
 """
 function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
-    rbm_model = rbm(dist)
-    l2_penalty = l2(dist)
-
     # γⱼ: Vector indexed by t (time)
-    gᵥ = rbm_model.visible.par[:] # Column vector indexed by i (visible units)
     o = reduce(hcat, obs_seq)' # Matrix indexed by t (time), i (visible units)
-    ogᵥ = o * gᵥ # Vector indexed by t (time)
-    oW = o * rbm_model.w # Matrix indexed by t (time), μ (hidden units)
-
+    W = weights(rbm(dist)) # Matrix indexed by i (visible units), μ (hidden units)
+    oW = o * W # Matrix indexed by t (time), μ (hidden units)
+    M = size(W, 2)
 
     function value_gradient_hessian(θ_vec::AbstractVector{<:Real})
 
-        M = size(rbm_model.w, 2)
         θ = similar(θ_vec, length(θ_vec) ÷ (M + 1), M + 1)
         θ[:] .= θ_vec
         logits, hiddens = unstack_vector_matrix(θ)
+
         log_aₖ = logits .- logsumexp(logits) # Vector indexed by k (mixture components)
+        hiddens_μ1k = reshape(hiddens', M, 1, :) # 3D Array indexed by μ (hidden units), 1, k (mixture components)
 
-        Whᵀ = rbm_model.w * hiddens' # Matrix indexed by i (visible units), k (mixture components)
-        gᵥpWhᵀ = gᵥ .+ Whᵀ # Matrix indexed by i (visible units), k (mixture components)
-        ∑ᵢlog1pexpgᵥpWhᵀ = sum(log1pexp.(gᵥpWhᵀ); dims=1) # Row vector indexed by k (mixture components)
-
-        log_prob_component = ogᵥ .+ oW * hiddens' .- ∑ᵢlog1pexpgᵥpWhᵀ # Matrix indexed by t (time), k (mixture components)
+        log_prob_component = RestrictedBoltzmannMachines.free_energy_h(rbm(dist), hiddens_μ1k) .- RestrictedBoltzmannMachines.energy(rbm(dist), o', hiddens_μ1k) # Matrix indexed by t (time), k (mixture components)
         log_prob_state = logsumexp(log_aₖ' .+ log_prob_component; dims=2) # Column vector indexed by t (time)
         responsability = exp.(log_aₖ' .+ log_prob_component .- log_prob_state) .- exp.(log_aₖ') # Matrix indexed by t (time), k (mixture components)
         γresp = γⱼ .* responsability # Matrix indexed by t (time), k (mixture components)
 
-        value = γⱼ ⋅ log_prob_state - l2_penalty * sum(abs2, hiddens)
+        value = γⱼ ⋅ log_prob_state - l2(dist) * sum(abs2, hiddens)
 
         grad_logits = vec(sum(γresp, dims=1)) # Vector indexed by k (mixture components)
 
-        Wᵀσ = rbm_model.w' * σ.(gᵥpWhᵀ) # Matrix indexed by μ (hidden units), k (mixture components)
+        Wᵀσ = W' * RestrictedBoltzmannMachines.mean_v_from_h(rbm(dist), hiddens') # Matrix indexed by μ (hidden units), k (mixture components)
 
-        grad_hiddens = γresp' * oW .- grad_logits .* Wᵀσ' .- 2l2_penalty * hiddens
+        grad_hiddens = γresp' * oW .- grad_logits .* Wᵀσ' .- 2 * l2(dist) * hiddens
 
         grad_θ_vec = stack_vector_matrix(grad_logits, grad_hiddens)[:]
 

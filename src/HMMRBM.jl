@@ -36,6 +36,7 @@ export sequence_index
 include("HMM/inference.jl")
 
 include("RBMDistribution/utils.jl")
+include("RBMDistribution/rbm_gradients.jl")
 include("RBMDistribution/RBMDistribution.jl")
 export RBMEmission
 export RBMEmissionFamily

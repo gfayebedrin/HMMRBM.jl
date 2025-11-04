@@ -1,5 +1,9 @@
 # HMMRBM.jl
 
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://gfayebedrin.github.io/HMMRBM.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://gfayebedrin.github.io/HMMRBM.jl/dev)
+[![Build Status](https://github.com/gfayebedrin/HMMRBM.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/gfayebedrin/HMMRBM.jl/actions/workflows/ci.yml)
+
 HMMRBM.jl couples multi-sequence Hidden Markov Models with Restricted Boltzmann Machine
 emission distributions. It reuses a shared RBM parameter across several observation
 streams, making it convenient to fit HMMs whose emissions are tied through a common latent

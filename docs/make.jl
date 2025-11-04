@@ -1,10 +1,13 @@
 using Documenter
+using Documenter.Remotes: GitHub
 using HMMRBM
+using DensityInterface
+using HiddenMarkovModels
 
 makedocs(
     sitename="HMMRBM.jl",
     authors="Guillaume Faye-Bedrin",
-    repo="https://github.com/gfayebedrin/HMMRBM.jl",
+    repo=GitHub("gfayebedrin","HMMRBM.jl"),
     pages=[
         "Home" => "index.md",
         "Multi-sequence HMMs" => "HMM.md",

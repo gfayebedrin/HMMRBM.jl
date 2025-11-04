@@ -1,0 +1,34 @@
+name: Register to BrainRegistry
+on:
+  push:
+    tags:
+      - 'v*'   # triggers only on tags like v0.1.2
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed so Pkg sees tags
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+
+      - name: Install dependencies
+        run: julia -e 'using Pkg; Pkg.add("LocalRegistry")'
+
+      - name: Register to BrainRegistry
+        env:
+          GITHUB_TOKEN: ${{ secrets.BRAINREGISTRY_TOKEN }}
+        run: |
+          julia -e '
+              using Pkg, LocalRegistry
+              repo = "https://github.com/gfayebedrin/BrainRegistry.jl"
+              tempdir = mktempdir()
+              run(`git clone $repo $tempdir`)
+              LocalRegistry.register(pwd(); registry=tempdir)
+              run(`cd $tempdir && git config user.name "github-actions" && git config user.email "actions@github.com" && git add . && git commit -m "Register new version of $(basename(pwd()))" && git push`)
+          '

@@ -7,7 +7,7 @@ using HiddenMarkovModels
 
 
 links = InterLinks(
-    "HiddenMarkovModels" => "https://https://gdalle.github.io/HiddenMarkovModels.jl/stable/objects.inv",
+    "HiddenMarkovModels" => "https://gdalle.github.io/HiddenMarkovModels.jl/stable/objects.inv",
     "DensityInterface" => "https://juliamath.github.io/DensityInterface.jl/stable/objects.inv",
 )
 

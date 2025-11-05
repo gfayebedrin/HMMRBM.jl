@@ -9,6 +9,37 @@ using RestrictedBoltzmannMachines: RBM, Binary
 
 using HMMRBM
 
+@testset "hmm_rbm constructor" begin
+    rng = MersenneTwister(5)
+    N, M = 3, 2
+    rbms = [
+        RBM(Binary(randn(rng, N)'), Binary(randn(rng, M)'), randn(rng, N, M)),
+        RBM(Binary(randn(rng, N)'), Binary(randn(rng, M)'), randn(rng, N, M)),
+    ]
+
+    Random.seed!(1234)
+    n_states = 3
+    l2 = 0.05
+    hmm = HMMRBM.hmm_rbm(rbms, n_states; l2)
+
+    @test hmm isa HMMRBM.MultiSeqHMM
+    @test length(hmm) == length(rbms)
+    @test all(isapprox(sum(init), 1; atol=1e-12) for init in HMMRBM.inits(hmm))
+    @test all(all(isapprox(sum(row), 1; atol=1e-12) for row in eachrow(trans)) for trans in HMMRBM.transitions(hmm))
+
+    emissions = HMMRBM.emissions(hmm)
+    @test all(em -> em isa HMMRBM.RBMEmissionFamily, emissions)
+    @test all(i -> HMMRBM.rbm(emissions[i]) === rbms[i], eachindex(rbms))
+    @test all(em -> HMMRBM.l2(em) == l2, emissions)
+
+    hidden_sizes = unique(size.(getfield.(rbms, :hidden)))
+    @test length(hidden_sizes) == 1
+    @test size(HMMRBM.emission_parameters(hmm)) == (n_states, only(hidden_sizes)...)
+    @test all(iszero, HMMRBM.emission_parameters(hmm))
+
+    @test HMMRBM.hyperparameters(hmm).l2 == l2
+end
+
 @testset "MultiSeqHMM wrapper" begin
     rng = MersenneTwister(3)
     N, M = 2, 2

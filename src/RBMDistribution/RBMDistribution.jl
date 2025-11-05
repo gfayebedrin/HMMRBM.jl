@@ -82,6 +82,11 @@ function baum_value_gradient_hessian(dist::RBMEmissionFamily, obs_seq::AbstractV
 end
 
 """
+    logdensityof(hmm::SingleSeqHMM)
+
+Log-density regularisation term for `SingleSeqHMM` instances whose emissions are
+`RBMEmission`.
+
 HMMs using RBMEmission must have hyperparameter `l2` for regularization.
 """
 function DensityInterface.logdensityof(hmm::SingleSeqHMM{<:MultiSeqHMM{<:Any,<:RBMEmissionFamily,<:Any,<:Any,<:Any},<:Any})

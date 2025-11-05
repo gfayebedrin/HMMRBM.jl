@@ -1,8 +1,15 @@
 using Documenter
 using Documenter.Remotes: GitHub
+using DocumenterInterLinks
 using HMMRBM
 using DensityInterface
 using HiddenMarkovModels
+
+
+links = InterLinks(
+    "HiddenMarkovModels" => "https://https://gdalle.github.io/HiddenMarkovModels.jl/stable/objects.inv",
+    "DensityInterface" => "https://juliamath.github.io/DensityInterface.jl/stable/objects.inv",
+)
 
 makedocs(
     sitename="HMMRBM.jl",
@@ -24,4 +31,3 @@ deploydocs(
         "dev" => "main",
     ]
 )
-

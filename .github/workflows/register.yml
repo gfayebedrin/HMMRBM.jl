@@ -1,14 +1,19 @@
 name: Register to BrainRegistry
+
 on:
   push:
     tags:
       - 'v*'   # triggers only on tags like v0.1.2
 
+permissions:
+  contents: write
+
 jobs:
   register:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout this repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0   # needed so Pkg sees tags
 
@@ -17,18 +22,39 @@ jobs:
         with:
           version: '1.10'
 
-      - name: Install dependencies
+      - name: Install LocalRegistry
         run: julia -e 'using Pkg; Pkg.add("LocalRegistry")'
 
-      - name: Register to BrainRegistry
+      - name: Checkout BrainRegistry.jl (with token)
+        uses: actions/checkout@v4
+        with:
+          repository: gfayebedrin/BrainRegistry.jl
+          path: brain-registry
+          fetch-depth: 0
+          token: ${{ secrets.BRAINREGISTRY_TOKEN }}  # PAT with repo write on BrainRegistry.jl
+
+      - name: Register to BrainRegistry and push
         env:
-          GITHUB_TOKEN: ${{ secrets.BRAINREGISTRY_TOKEN }}
+          REGISTRY_PATH: ${{ github.workspace }}/brain-registry
         run: |
-          julia -e '
-              using Pkg, LocalRegistry
-              repo = "https://github.com/gfayebedrin/BrainRegistry.jl"
-              tempdir = mktempdir()
-              run(`git clone $repo $tempdir`)
-              LocalRegistry.register(pwd(); registry=tempdir)
-              run(`cd $tempdir && git config user.name "github-actions" && git config user.email "actions@github.com" && git add . && git commit -m "Register new version of $(basename(pwd()))" && git push`)
+          set -euo pipefail
+
+          # Register the new version into the local clone of the registry
+          julia --color=yes -e '
+            using Pkg, LocalRegistry
+            reg = ENV["REGISTRY_PATH"]
+            LocalRegistry.register(pwd(); registry=reg)
           '
+
+          # Configure committer identity
+          git -C "$REGISTRY_PATH" config user.name "github-actions"
+          git -C "$REGISTRY_PATH" config user.email "actions@github.com"
+
+          # Commit and push only if there are changes
+          if [ -n "$(git -C "$REGISTRY_PATH" status --porcelain)" ]; then
+            git -C "$REGISTRY_PATH" add .
+            git -C "$REGISTRY_PATH" commit -m "Register new version of $(basename "$GITHUB_REPOSITORY") at $GITHUB_REF"
+            git -C "$REGISTRY_PATH" push origin HEAD
+          else
+            echo "No changes to commit in registry."
+          fi

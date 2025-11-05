@@ -22,6 +22,7 @@ HMMRBM.state_count(::HMMRBM.SingleSeqHMM)
 HMMRBM.stack_vector_matrix
 HMMRBM.unstack_vector_matrix
 HMMRBM.weights
+HMMRBM.log_P_v_given_h
 HMMRBM.∂ₕlog_P_v_given_h
 HMMRBM.∂ₕ²log_P_v_given_h
 ```

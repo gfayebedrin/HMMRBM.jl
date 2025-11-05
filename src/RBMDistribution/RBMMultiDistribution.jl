@@ -96,7 +96,7 @@ function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::Abst
         log_aₖ = logits .- logsumexp(logits) # Vector indexed by k (mixture components)
         hiddens_μ1k = reshape(hiddens', M, 1, :) # 3D Array indexed by μ (hidden units), 1, k (mixture components)
 
-        log_prob_component = RestrictedBoltzmannMachines.free_energy_h(rbm(dist), hiddens_μ1k) .- RestrictedBoltzmannMachines.energy(rbm(dist), o', hiddens_μ1k) # Matrix indexed by t (time), k (mixture components)
+        log_prob_component = log_P_v_given_h(rbm(dist), o', hiddens_μ1k) # Matrix indexed by t (time), k (mixture components)
         log_prob_state = logsumexp(log_aₖ' .+ log_prob_component; dims=2) # Column vector indexed by t (time)
         responsability = exp.(log_aₖ' .+ log_prob_component .- log_prob_state) .- exp.(log_aₖ') # Matrix indexed by t (time), k (mixture components)
         γresp = γⱼ .* responsability # Matrix indexed by t (time), k (mixture components)

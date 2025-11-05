@@ -16,6 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0   # needed so Pkg sees tags
+          persist-credentials: true
 
       - name: Set up Julia
         uses: julia-actions/setup-julia@v2
@@ -24,6 +25,11 @@ jobs:
 
       - name: Install LocalRegistry
         run: julia -e 'using Pkg; Pkg.add("LocalRegistry")'
+
+      - name: Configure Git for commits
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Checkout BrainRegistry.jl (with token)
         uses: actions/checkout@v4

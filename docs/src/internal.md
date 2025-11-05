@@ -28,12 +28,10 @@ HMMRBM.∂ₕ²log_P_v_given_h
 
 ## Algorithm Extensions
 
-[`HiddenMarkovModels.baum_welch`](@extref)
 ```@docs
 HiddenMarkovModels.baum_welch(::HMMRBM.MultiSeqHMM, ::AbstractVector{<:AbstractVector})
 ```
 
-[`DensityInterface.logdensityof`](@extref)
 ```@docs
 DensityInterface.logdensityof(::HMMRBM.SingleSeqHMM{<:HMMRBM.MultiSeqHMM{<:Any,<:HMMRBM.RBMEmissionFamily,<:Any,<:Any,<:Any},<:Any})
 DensityInterface.logdensityof(::HMMRBM.SingleSeqHMM{<:HMMRBM.MultiSeqHMM{<:Any,<:HMMRBM.RBMMultiEmissionFamily,<:Any,<:Any,<:Any},<:Any})

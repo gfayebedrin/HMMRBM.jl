@@ -28,7 +28,10 @@ function gradient_descent(value_gradient_hessian, x0;
 )
 
     x = copy(x0)
+    g = similar(x)
+    H = Diagonal(similar(x))
     fx, g, H = value_gradient_hessian(x)
+
 
     for k in 1:maxiter
         if norm(g) ≤ tol

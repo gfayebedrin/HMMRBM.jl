@@ -88,7 +88,7 @@ function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::Abst
     Eₒ = RestrictedBoltzmannMachines.energy(rbm(dist).visible, o') # Vector indexed by t (time)
     M = size(W, 2)
 
-    function value_gradient_hessian(θ_vec::AbstractVector{<:Real})
+    function value_gradient_hessian!(grad, ::Nothing, θ_vec::AbstractVector{<:Real})
 
         θ = similar(θ_vec, length(θ_vec) ÷ (M + 1), M + 1)
         θ[:] .= θ_vec
@@ -109,12 +109,12 @@ function baum_value_gradient_hessian(dist::RBMMultiEmissionFamily, obs_seq::Abst
 
         grad_hiddens = γresp' * oW .- grad_logits .* Wᵀσ' .- 2 * l2(dist) * hiddens
 
-        grad_θ_vec = stack_vector_matrix(grad_logits, grad_hiddens)[:]
+        grad .= stack_vector_matrix(grad_logits, grad_hiddens)[:]
 
-        return value, grad_θ_vec, nothing
+        return value, grad, nothing
     end
 
-    return value_gradient_hessian
+    return value_gradient_hessian!
 end
 
 

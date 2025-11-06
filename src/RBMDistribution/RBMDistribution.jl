@@ -72,15 +72,15 @@ function baum_value_gradient_hessian(dist::RBMEmissionFamily, obs_seq::AbstractV
     Wᵀv = rbm(dist).w' * obs_mat
     Eᵥ = RestrictedBoltzmannMachines.energy(rbm(dist).visible, obs_mat)
 
-    function value_gradient_hessian(h::AbstractVector{<:Real})
+    function value_gradient_hessian!(grad, hess, h::AbstractVector{<:Real})
         value = γⱼ ⋅ log_P_v_given_h(rbm(dist), Eᵥ, Wᵀv, h) - l2(dist) * sum(abs2, h)
-        grad = ∂ₕlog_P_v_given_h(rbm(dist), Wᵀv, h) * γⱼ .- 2 * l2(dist) * h
-        hess = ∂ₕ²log_P_v_given_h(rbm(dist), h) * ∑ₜγⱼₜ - 2 * l2(dist) * I
+        grad .= ∂ₕlog_P_v_given_h(rbm(dist), Wᵀv, h) * γⱼ .- 2 * l2(dist) * h
+        hess .= ∂ₕ²log_P_v_given_h(rbm(dist), h) * ∑ₜγⱼₜ - 2 * l2(dist) * I
 
         return value, grad, hess
     end
 
-    return value_gradient_hessian
+    return value_gradient_hessian!
 end
 
 """

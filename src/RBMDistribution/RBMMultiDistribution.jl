@@ -8,8 +8,8 @@
 Emission distribution representing an RBM backed mixture. The stacked parameter `θ`
 contains logits and hidden vectors, while `l2` records the regularisation strength.
 """
-struct RBMMultiEmission{R,Θ} <: Distribution
-    rbm::R
+struct RBMMultiEmission{Θ} <: Distribution
+    rbm::RestrictedBoltzmannMachines.RBM
     θ::Θ
     l2::Real
 end
@@ -20,15 +20,15 @@ end
 Distribution family that converts stacked logits and hidden vectors into
 `RBMMultiEmission` instances.
 """
-struct RBMMultiEmissionFamily{R} <: DistributionFamily{RBMMultiEmission{R}}
-    rbm::R
+struct RBMMultiEmissionFamily <: DistributionFamily{RBMMultiEmission}
+    rbm::RestrictedBoltzmannMachines.RBM
     l2::Real
 end
 
 
 # --- Constructors ---
 
-function RBMMultiEmission(rbm, hiddens::AbstractArray, logits::AbstractArray, l2::Real)
+function RBMMultiEmission(rbm::RestrictedBoltzmannMachines.RBM, hiddens::AbstractArray, logits::AbstractArray, l2::Real)
     RBMMultiEmission(rbm, stack_vector_matrix(logits, hiddens), l2)
 end
 
@@ -48,7 +48,7 @@ hiddens(dist::RBMMultiEmission) = last(unstack_vector_matrix(θ(dist)))
 
 # --- Distribution interface ---
 
-family(dist::RBMMultiEmission{R,Θ}) where {R,Θ} = RBMMultiEmissionFamily{R}(dist.rbm, dist.l2)
+family(dist::RBMMultiEmission{Θ}) where {Θ} = RBMMultiEmissionFamily(dist.rbm, dist.l2)
 
 parameter(dist::RBMMultiEmission) = θ(dist)
 

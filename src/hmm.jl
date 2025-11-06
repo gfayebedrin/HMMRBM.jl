@@ -6,7 +6,7 @@ number of hidden Markov states. Initial probabilities and transition matrices ar
 with simple defaults, and the returned model stores the provided ℓ2 regularisation value
 in its hyperparameters.
 """
-function hmm_rbm(rbms::AbstractVector, n_states::Integer; l2::Real=0.0)
+function hmm_rbm(rbms::AbstractVector{<:RestrictedBoltzmannMachines.RBM}, n_states::Integer; l2::Real=0.0)
 
     @argcheck !isempty(rbms) ArgumentError("At least one RBM is required")
 

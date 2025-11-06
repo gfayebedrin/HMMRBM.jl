@@ -14,7 +14,7 @@ the regularisation strength in the resulting model.
 function MultiSeqHMM(;
     inits,
     transitions,
-    rbms::AbstractVector,
+    rbms::AbstractVector{<:RestrictedBoltzmannMachines.RBM},
     hiddens,
     l2::Real=0.0,
     logits::Union{Nothing,AbstractMatrix}=nothing,

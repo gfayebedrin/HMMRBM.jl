@@ -8,8 +8,8 @@
 Concrete emission distribution backed by an RBM and a single hidden vector. The `l2`
 value stores the regularisation strength used during training.
 """
-struct RBMEmission{R,H} <: Distribution
-    rbm::R
+struct RBMEmission{H} <: Distribution
+    rbm::RestrictedBoltzmannMachines.RBM
     hidden::H
     l2::Real
 end
@@ -20,8 +20,8 @@ end
 Distribution family that turns hidden vectors into `RBMEmission` instances using the
 supplied RBM and regularisation coefficient.
 """
-struct RBMEmissionFamily{R} <: DistributionFamily{RBMEmission{R}}
-    rbm::R
+struct RBMEmissionFamily <: DistributionFamily{RBMEmission}
+    rbm::RestrictedBoltzmannMachines.RBM
     l2::Real
 end
 
@@ -37,7 +37,7 @@ l2(dist::RBMEmissionFamily) = dist.l2
 
 # --- Distribution interface ---
 
-family(dist::RBMEmission{R,H}) where {R,H} = RBMEmissionFamily{R}(dist.rbm, dist.l2)
+family(dist::RBMEmission{H}) where {H} = RBMEmissionFamily(dist.rbm, dist.l2)
 
 parameter(dist::RBMEmission) = dist.hidden
 

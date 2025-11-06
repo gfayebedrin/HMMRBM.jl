@@ -1,9 +1,9 @@
 """
-    log_P_v_given_h(rbm, v, h)
+    log_P_v_given_h(rbm, Eᵥ, Wᵀv, h)
 
 Log probability of the visible units given the hidden units of the RBM.
 
-``
+`Eᵥ` should be precomputed as `energy(rbm.visible, v)`.
 `Wᵀv` should be precomputed as `rbm.w' * v`.
 """
 function log_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, Eᵥ::Union{AbstractArray, Real}, Wᵀv::AbstractArray, h::AbstractArray)
@@ -18,14 +18,14 @@ end
 
 Gradient of the log probability of the visible units given the hidden units of the RBM.
 
-`Wᵀv` should be precomputed as `rbm.w' * v` for efficiency.
+`Wᵀv` should be precomputed as `rbm.w' * v`.
 """
 function ∂ₕlog_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, Wᵀv::AbstractArray, h::AbstractVector)
     Wᵀv .- rbm.w' * RestrictedBoltzmannMachines.mean_v_from_h(rbm, h)
 end
 
 """
-    ∂ₕ²log_P_v_given_h(rbm, v, h)
+    ∂ₕ²log_P_v_given_h(rbm, h)
 
 Diagonal of the Hessian of the log probability of the visible units given the hidden units of the RBM.
 """

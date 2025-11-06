@@ -7,6 +7,7 @@ The following helpers are documented but not exported. They remain available as
 
 ```@docs
 HMMRBM.gradient_descent
+HMMRBM.my_mult
 ```
 
 ## Multi-sequence Helpers
@@ -21,7 +22,6 @@ HMMRBM.state_count(::HMMRBM.SingleSeqHMM)
 ```@docs
 HMMRBM.stack_vector_matrix
 HMMRBM.unstack_vector_matrix
-HMMRBM.weights
 HMMRBM.log_P_v_given_h
 HMMRBM.∂ₕlog_P_v_given_h
 HMMRBM.∂ₕ²log_P_v_given_h

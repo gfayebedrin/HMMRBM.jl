@@ -1,6 +1,34 @@
 σ(z) = logistic(z)
 σ_prime(z) = σ(z) * (one(z) - σ(z))
 
+
+"""
+    my_mult(A, B)
+
+Contract matrix `A` with array `B` over the last dimension of `A` and the first
+dimension of `B`.
+"""
+my_mult(A::AbstractMatrix, B::AbstractVector) = A * B
+my_mult(A::AbstractMatrix, B::AbstractMatrix) = A * B
+function my_mult(A::AbstractMatrix, B::AbstractArray{T, N}) where {T, N}
+    @argcheck size(A, 2) == size(B, 1) DimensionMismatch(
+        "Incompatible dimensions: size(A) = $(size(A)), size(B) = $(size(B))"
+    )
+
+    tail_dims = Base.tail(size(B))
+    result_eltype = promote_type(eltype(A), T)
+    out = similar(B, result_eltype, (size(A, 1), tail_dims...))
+
+    @views begin
+        flat_B = reshape(B, size(B, 1), :)
+        flat_out = reshape(out, size(out, 1), :)
+        mul!(flat_out, A, flat_B)
+    end
+
+    out
+end
+
+
 """
     stack_vector_matrix(v, mat)
 

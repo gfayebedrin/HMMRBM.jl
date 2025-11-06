@@ -42,7 +42,7 @@ end
 
 @testset "RBM multi emission" begin
     rng = MersenneTwister(2)
-    N, M, K = 4, 3, 2
+    N, M, K = 5, 3, 2
     rbm = RBM(Binary(randn(rng, N)'), Binary(randn(rng, M)'), randn(rng, N, M))
     l2 = 0.05
     logits = randn(rng, K)

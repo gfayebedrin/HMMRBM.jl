@@ -2,6 +2,7 @@ module HMMRBM
 
 using Adapt
 using ArgCheck
+using Base.Math: log1p, exp
 using DensityInterface
 using HiddenMarkovModels
 using LinearAlgebra

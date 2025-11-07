@@ -11,7 +11,7 @@ function cgfs!(out::AbstractArray, x, y)
 end
 
 function cgfs!(out::AbstractArray, visible::RestrictedBoltzmannMachines.Binary, inputs::AbstractArray)
-    @. out = log1pexp(inputs + visible.θ)
+    @. out = log1pexp_fast(inputs + visible.θ)
     return out
 end
 

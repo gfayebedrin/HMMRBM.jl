@@ -3,6 +3,22 @@
 
 
 """
+    log1pexp_fast(x)
+
+Compute `log(1 + exp(x))` in a fast way for use with @simd.
+"""
+@inline @fastmath function log1pexp_fast(x::T) where {T<:Real}
+    if x > T(20)
+        return x
+    elseif x < T(-20)
+        return exp(x)
+    else
+        return log1p(exp(x))
+    end
+end
+
+
+"""
     my_mult(A, B)
 
 Contract matrix `A` with array `B` over the last dimension of `A` and the first

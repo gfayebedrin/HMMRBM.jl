@@ -33,7 +33,7 @@ function HiddenMarkovModels.baum_welch!(
         end
 
         push!(logL_evolution, logdensityof(hmm) + sum(sum(fs.logL) for fs in fb_storages))
-        fit!(hmm, adapt.(eltype(obs_sequences), fb_storages), obs_sequences)
+        fit!(hmm, fb_storages, obs_sequences)
         if baum_welch_has_converged(logL_evolution; atol, loglikelihood_increasing)
             break
         end
@@ -128,6 +128,18 @@ function StatsAPI.fit!(
 
 
     # Safety check
+    for (init, dists, trans) in zip(initialization.(hmm), obs_distributions.(hmm), transition_matrix.(hmm))
+        if !(length(init) == length(dists) == size(trans, 1) == size(trans, 2))
+            @warn "length(init) = $(length(init)), length(dists) = $(length(dists))), size(trans) = $(size(trans))"
+        elseif !HiddenMarkovModels.valid_prob_vec(init)
+            @warn "Invalid initial probabilities: $(init)"
+        elseif !HiddenMarkovModels.valid_trans_mat(trans)
+            @warn "Invalid transition matrix: $(trans)" 
+        elseif !HiddenMarkovModels.valid_dists(dists)
+            @warn "Invalid distributions: $(dists)"
+        end
+    end
+
     @argcheck HiddenMarkovModels.valid_hmm(hmm)
 
     return nothing
@@ -151,7 +163,7 @@ function StatsAPI.fit!(
 
     # Compute cost, gradient, hessian as sum over sequences of those of individual sequences
     baum_objs_grads = baum_value_gradient.(dists, obs_sequences, γsⱼ)
-    
+
     function f(θ)
         -sum(baum_objs_grads[i][1](θ) for i in eachindex(baum_objs_grads))
     end

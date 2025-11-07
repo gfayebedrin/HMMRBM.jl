@@ -33,7 +33,7 @@ function HiddenMarkovModels.baum_welch!(
         end
 
         push!(logL_evolution, logdensityof(hmm) + sum(sum(fs.logL) for fs in fb_storages))
-        fit!(hmm, fb_storages, obs_sequences)
+        fit!(hmm, adapt.(eltype(obs_sequences), fb_storages), obs_sequences)
         if baum_welch_has_converged(logL_evolution; atol, loglikelihood_increasing)
             break
         end
@@ -97,6 +97,7 @@ function StatsAPI.fit!(
     γs = getproperty.(fb_storages, :γ)
     ξs = getproperty.(fb_storages, :ξ)
 
+
     # Fit inits
     Threads.@threads for (γ, init, loginit) in zip(γs, inits(hmm), loginits(hmm)) |> collect
         sum!(init, γ)
@@ -144,25 +145,27 @@ function StatsAPI.fit!(
     @argcheck length(u_p) == 1 ArgumentError("All distributions must share the same parameter object")
 
     θ0 = only(u_p)
+    ∇ = similar(θ0)
+    ∇_tmp = similar(θ0)
 
     # Compute cost, gradient, hessian as sum over sequences of those of individual sequences
-    function baum(θ)
-        baums = baum_value_gradient_hessian.(dists, obs_sequences, γsⱼ)
-        f_g_h = [baum(θ) for baum in baums]
-        f = sum(getindex.(f_g_h, 1))
-        g = sum(getindex.(f_g_h, 2))
-        h_vals = getindex.(f_g_h, 3)
-        h = if any(x -> x === nothing, h_vals)
-            nothing
-        else
-            sum(h_vals)
-        end
-        f, g, h
+    baum_objs_grads = baum_value_gradient.(dists, obs_sequences, γsⱼ)
+    
+    function f(θ)
+        -sum(baum_objs_grads[i][1](θ) for i in eachindex(baum_objs_grads))
     end
 
-    (; xmax) = gradient_ascent(baum, θ0[:])
+    function grad!(∇, θ)
+        fill!(∇, zero(eltype(∇)))
+        for i in eachindex(baum_objs_grads)
+            baum_objs_grads[i][2](∇_tmp, θ)
+            ∇ .-= ∇_tmp
+        end
+    end
 
-    θ0[:] .= xmax
+    res = Optim.optimize(f, grad!, θ0, Optim.LBFGS())
+
+    θ0[:] .= Optim.minimizer(res)
 
     return nothing
 end

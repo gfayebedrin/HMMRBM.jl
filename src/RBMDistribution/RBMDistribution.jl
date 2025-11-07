@@ -57,30 +57,22 @@ function distribution(dist::RBMEmissionFamily, hidden)
     RBMEmission(dist.rbm, hidden, dist.l2)
 end
 
-"""
-    baum_value_gradient_hessian(dist, obs_seq, γ)
 
-Prepare the objective, gradient, and Hessian evaluations required by the Baum–Welch
-update for a single HMM state. The returned closure accepts a hidden vector and produces
-the corresponding value, gradient, and optional Hessian information with respect to that
-vector.
-"""
-function baum_value_gradient_hessian(dist::RBMEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
+function baum_value_gradient(dist::RBMEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
     obs_mat = reduce(hcat, obs_seq)
-    ∑ₜγⱼₜ = sum(γⱼ)
     Wᵀv = rbm(dist).w' * obs_mat
     Eᵥ = RestrictedBoltzmannMachines.energy(rbm(dist).visible, obs_mat)
 
-    function value_gradient_hessian!(grad, hess, h::AbstractVector{<:Real})
-        value = γⱼ ⋅ log_P_v_given_h(rbm(dist), Eᵥ, Wᵀv, h) - l2(dist) * sum(abs2, h)
-        grad .= ∂ₕlog_P_v_given_h(rbm(dist), Wᵀv, h) * γⱼ .- 2 * l2(dist) * h
-        hess .= ∂ₕ²log_P_v_given_h(rbm(dist), h) * ∑ₜγⱼₜ - 2 * l2(dist) * I
-
-        return value, grad, hess
+    function f(h)
+        γⱼ ⋅ log_P_v_given_h(rbm(dist), Eᵥ, Wᵀv, h) - l2(dist) * sum(abs2, h)
     end
 
-    return value_gradient_hessian!
+    function grad!(∇ₕ, h)
+        ∇ₕ .= ∂ₕlog_P_v_given_h(rbm(dist), Wᵀv, h) * γⱼ .- 2 * l2(dist) * h
+    end
+
+    return f, grad!
 end
 
 """

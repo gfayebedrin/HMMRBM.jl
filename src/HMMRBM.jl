@@ -1,15 +1,15 @@
 module HMMRBM
 
-using HiddenMarkovModels
-using StatsAPI
-using DensityInterface
-using Random
-using LinearAlgebra
-using StatsFuns
-using ArgCheck
 using Adapt
+using ArgCheck
+using DensityInterface
+using HiddenMarkovModels
+using LinearAlgebra
+using Optim
+using Random
 using RestrictedBoltzmannMachines
-using Distributions
+using StatsAPI
+using StatsFuns
 
 include("HMM/utils.jl")
 include("HMM/AbstractDistributions.jl")

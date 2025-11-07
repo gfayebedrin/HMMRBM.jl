@@ -41,10 +41,14 @@ Get the parameter object associated with the given `dist`.
 function parameter end
 
 """
-    baum_value_gradient_hessian(dist, obs_seq, γ)
-    baum_value_gradient_hessian(family, obs_seq, γ)
+    baum_value_gradient(dist, obs_seq, γ)
 
-Get a function that computes the Baum-Welch value, gradient, and Hessian for the given `dist`, observation sequence `obs_seq`, and posteriors `γ`.
+Prepare the objective and gradient evaluations required by the Baum-Welch
+update for a single HMM state.
+
+Returns a tuple of two functions `(f, grad!)`
+where `f(x)` returns the objective value at `x`,
+and `grad!(∇ₓf, x)` fills `∇ₓf` with the gradient at `x`.
 """
-function baum_value_gradient_hessian end
-baum_value_gradient_hessian(dist::Distribution, obs_seq, γ) = baum_value_gradient_hessian(family(dist), obs_seq, γ)
+function baum_value_gradient end
+baum_value_gradient(dist::Distribution, obs_seq, γ) = baum_value_gradient(family(dist), obs_seq, γ)

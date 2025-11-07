@@ -1,10 +1,13 @@
 """
+    log_P_v_given_h(rbm, v, h)
     log_P_v_given_h(rbm, Eᵥ, Wᵀv, h)
 
 Log probability of the visible units given the hidden units of the RBM.
 
-`Eᵥ` should be precomputed as `energy(rbm.visible, v)`.
-`Wᵀv` should be precomputed as `rbm.w' * v`.
+## Optimisation
+Use `log_P_v_given_h(rbm, Eᵥ, Wᵀv, h)` when repeatedly evaluating for the same visible vector `v`.
+- `Eᵥ` should be precomputed as `energy(rbm.visible, v)`.
+- `Wᵀv` should be precomputed as `rbm.w' * v`.
 """
 function log_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, Eᵥ::Union{AbstractArray, Real}, Wᵀv::AbstractArray, h::AbstractArray)
     interaction = my_mult(Wᵀv', h)
@@ -12,6 +15,13 @@ function log_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, Eᵥ::Union{Abstr
     cumulant = RestrictedBoltzmannMachines.cgf(rbm.visible, inputs)
     return interaction .- Eᵥ .- cumulant'
 end
+
+function log_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, v::AbstractArray, h::AbstractArray)
+    Eᵥ = RestrictedBoltzmannMachines.energy(rbm.visible, v)
+    Wᵀv = rbm.w' * v
+    log_P_v_given_h(rbm, Eᵥ, Wᵀv, h)
+end
+
 
 """
     ∂ₕlog_P_v_given_h(rbm, Wᵀv, h)

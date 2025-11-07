@@ -37,7 +37,7 @@ l2(dist::RBMEmissionFamily) = dist.l2
 
 # --- Distribution interface ---
 
-family(dist::RBMEmission{H}) where {H} = RBMEmissionFamily(dist.rbm, dist.l2)
+family(dist::RBMEmission) = RBMEmissionFamily(dist.rbm, dist.l2)
 
 parameter(dist::RBMEmission) = dist.hidden
 
@@ -47,7 +47,7 @@ Random.rand(::AbstractRNG, dist::RBMEmission) = Random.rand(dist)
 DensityInterface.DensityKind(::RBMEmission) = DensityInterface.HasDensity()
 
 function DensityInterface.logdensityof(dist::RBMEmission, obs::AbstractVector)
-    -RestrictedBoltzmannMachines.energy(rbm(dist), obs, hidden(dist)) + RestrictedBoltzmannMachines.free_energy_h(rbm(dist), hidden(dist))
+    log_P_v_given_h(rbm(dist), obs, hidden(dist))
 end
 
 

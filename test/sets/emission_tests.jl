@@ -4,7 +4,6 @@ using Random
 using Test
 
 using DensityInterface: logdensityof
-using LinearAlgebra: Diagonal
 using RestrictedBoltzmannMachines: RBM, Binary
 
 using HMMRBM
@@ -29,15 +28,16 @@ using HMMRBM
 
     obs_seq = [obs, obs .+ 0.1]
     γ = [0.6, 0.4]
-    value_grad = HMMRBM.baum_value_gradient_hessian(family, obs_seq, γ)
+    f, grad! = HMMRBM.baum_value_gradient(family, obs_seq, γ)
 
-    value, grad, hess = value_grad(copy(hidden))
+    value = f(copy(hidden))
     @test value isa Real
     @test isfinite(value)
+    grad = similar(hidden)
+    grad!(grad, copy(hidden))
     @test grad isa AbstractVector
     @test length(grad) == M
-    @test hess isa Diagonal
-    @test size(hess) == (M, M)
+    @test all(isfinite, grad)
 end
 
 @testset "RBM multi emission" begin
@@ -58,16 +58,17 @@ end
 
     obs_seq = [obs, obs .+ 0.2, obs .- 0.1]
     γ = fill(1 / length(obs_seq), length(obs_seq))
-    baum = HMMRBM.baum_value_gradient_hessian(family, obs_seq, γ)
+    f, grad! = HMMRBM.baum_value_gradient(family, obs_seq, γ)
     θ_vec = copy(HMMRBM.parameter(dist)[:])
-    value, grad, hess = baum(θ_vec)
+    value = f(copy(θ_vec))
 
     @test value isa Real
     @test isfinite(value)
+    grad = similar(θ_vec)
+    grad!(grad, copy(θ_vec))
     @test grad isa AbstractVector
     @test length(grad) == length(θ_vec)
-    @test hess === nothing || (hess isa AbstractMatrix && size(hess) == (length(θ_vec), length(θ_vec)))
-    @test hess === nothing
+    @test all(isfinite, grad)
 end
 
 end # module

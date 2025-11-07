@@ -144,7 +144,7 @@ function StatsAPI.fit!(
     u_p = unique(parameter.(dists))
     @argcheck length(u_p) == 1 ArgumentError("All distributions must share the same parameter object")
 
-    θ0 = only(u_p)
+    θ0 = copy(only(u_p))
     ∇ = similar(θ0)
     ∇_tmp = similar(θ0)
 

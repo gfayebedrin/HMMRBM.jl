@@ -14,8 +14,8 @@ abstract type Distribution end
 
 The following functions must be defined:
 - `distribution(::DistributionFamily{T}, parameter)::T where T<:Distribution`
-- `baum_value_gradient_hessian(dist::Distribution, obs_seq, γ)::Function`
-where the returned function has signature `value_gradient_hessian(parameter)::Tuple{Real,AbstractVector,Union{AbstractMatrix,Nothing}}`
+- `baum_value_gradient(dist::Distribution, obs_seq, γ)::Tuple{Function,Function}`
+where the returned tuple contains the objective and gradient functions required by Baum-Welch
 """
 abstract type DistributionFamily{T<:Distribution} end
 

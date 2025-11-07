@@ -7,6 +7,7 @@ using HiddenMarkovModels
 using LinearAlgebra
 using Optim
 using Random
+using Distributions: Categorical
 using RestrictedBoltzmannMachines
 using StatsAPI
 using StatsFuns
@@ -18,7 +19,7 @@ export DistributionFamily
 export distribution
 export family
 export parameter
-export baum_value_gradient_hessian
+export baum_value_gradient
 
 include("HMM/MultiSeqHMM.jl")
 export MultiSeqHMM

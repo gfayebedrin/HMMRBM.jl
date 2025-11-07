@@ -30,7 +30,7 @@ HMMRBM.hmm_rbm
 HMMRBM.distribution
 HMMRBM.family
 HMMRBM.parameter
-HMMRBM.baum_value_gradient_hessian
+HMMRBM.baum_value_gradient
 ```
 
 ## Saving

@@ -52,12 +52,12 @@ family(dist::RBMMultiEmission{Θ}) where {Θ} = RBMMultiEmissionFamily(dist.rbm,
 
 parameter(dist::RBMMultiEmission) = θ(dist)
 
-function Random.rand(dist::RBMMultiEmission)
+function Random.rand(rng::AbstractRNG, dist::RBMMultiEmission)
     aₖ = softmax(logits(dist))
-    k = rand(Categorical(aₖ))
+    k = rand(rng, Categorical(aₖ))
     RestrictedBoltzmannMachines.sample_v_from_h(rbm(dist), selectdim(hiddens(dist), 1, k))
 end
-Random.rand(::AbstractRNG, dist::RBMMultiEmission) = Random.rand(dist)
+Random.rand(dist::RBMMultiEmission) = Random.rand(Random.default_rng(), dist)
 
 DensityInterface.DensityKind(::RBMMultiEmission) = DensityInterface.HasDensity()
 
@@ -124,7 +124,7 @@ function baum_value_gradient(dist::RBMMultiEmissionFamily, obs_seq::AbstractVect
 
         if θ != cache.lastθ
             copy!(cache.lastθ, θ)
-            logits, hiddens = unstack_vector_matrix(reshape(θ_vec, :, n_hidden + 1))
+            logits, hiddens = unstack_vector_matrix(reshape(θ, :, n_hidden + 1))
             cache.log_aₖ .= logits .- logsumexp(logits)
             cache.hiddens .= hiddens
             cache.log_prob_component .= log_P_v_given_h(rbm(dist), Eₒ, oW', hiddens')

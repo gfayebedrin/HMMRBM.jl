@@ -3,10 +3,9 @@
 The following helpers are documented but not exported. They remain available as
 `HMMRBM` internals for advanced workflows and extension hooks.
 
-## Optimisation
+## Utilities
 
 ```@docs
-HMMRBM.gradient_descent
 HMMRBM.my_mult
 ```
 

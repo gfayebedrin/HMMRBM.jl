@@ -144,7 +144,8 @@ function StatsAPI.fit!(
     u_p = unique(parameter.(dists))
     @argcheck length(u_p) == 1 ArgumentError("All distributions must share the same parameter object")
 
-    θ0 = copy(only(u_p))
+    θ_param = only(u_p)
+    θ0 = copy(θ_param)
     ∇ = similar(θ0)
     ∇_tmp = similar(θ0)
 
@@ -165,7 +166,7 @@ function StatsAPI.fit!(
 
     res = Optim.optimize(f, grad!, θ0, Optim.LBFGS())
 
-    θ0[:] .= Optim.minimizer(res)
+    θ_param .= Optim.minimizer(res)
 
     return nothing
 end

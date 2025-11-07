@@ -7,6 +7,8 @@ The following helpers are documented but not exported. They remain available as
 
 ```@docs
 HMMRBM.my_mult
+HMMRBM.stack_vector_matrix
+HMMRBM.unstack_vector_matrix
 ```
 
 ## Multi-sequence Helpers
@@ -19,11 +21,10 @@ HMMRBM.state_count(::HMMRBM.SingleSeqHMM)
 ## RBM Utilities
 
 ```@docs
-HMMRBM.stack_vector_matrix
-HMMRBM.unstack_vector_matrix
 HMMRBM.log_P_v_given_h
 HMMRBM.∂ₕlog_P_v_given_h
 HMMRBM.∂ₕ²log_P_v_given_h
+HMMRBM.cgfs!
 ```
 
 ## Algorithm Extensions

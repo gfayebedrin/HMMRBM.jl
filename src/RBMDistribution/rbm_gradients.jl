@@ -9,7 +9,7 @@ Log probability of the visible units given the hidden units of the RBM.
 function log_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, Eᵥ::Union{AbstractArray, Real}, Wᵀv::AbstractArray, h::AbstractArray)
     interaction = my_mult(Wᵀv', h)
     inputs = RestrictedBoltzmannMachines.inputs_v_from_h(rbm, h)
-    cumulant = -RestrictedBoltzmannMachines.cgf(rbm.visible, inputs)
+    cumulant = RestrictedBoltzmannMachines.cgf(rbm.visible, inputs)
     return interaction .- Eᵥ .- cumulant'
 end
 

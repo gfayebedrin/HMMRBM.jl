@@ -101,17 +101,19 @@ end
         l2=l2,
     )
 
-    obs_sequences = [[randn(rng, N) for _ in 1:3]]
+    obs_sequences = [[randn(rng, N) for _ in 1:4]]
 
     hmm_est, logL = HiddenMarkovModels.baum_welch(
         hmm_guess,
         obs_sequences;
-        max_iterations=1,
+        max_iterations=3,
         loglikelihood_increasing=false,
         atol=-Inf,
     )
 
-    @test length(logL) == 1
+    @test length(logL) == 3
+    @test logL[2] ≥ logL[1]
+    @test logL[3] ≥ logL[2]
     @test size(HMMRBM.emission_parameters(hmm_est)) == size(hiddens)
     @test HiddenMarkovModels.valid_hmm(hmm_est)
 end

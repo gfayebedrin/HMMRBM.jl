@@ -143,7 +143,9 @@ function baum_value_gradient(dist::RBMMultiEmissionFamily, obs_seq::AbstractVect
     function grad!(∇::Vector, θ::Vector)
         calculate_common!(θ)
 
-        responsability = exp.(cache.log_aₖ' .+ cache.log_prob_component .- cache.log_prob_state) .- exp.(cache.log_aₖ') # Matrix indexed by t (time), k (mixture components)
+        responsability = similar(cache.log_prob_component)
+        @. responsability = exp(cache.log_aₖ' + cache.log_prob_component - cache.log_prob_state) - exp(cache.log_aₖ') # Matrix indexed by t (time), k (mixture components)
+
         γresp = γⱼ .* responsability # Matrix indexed by t (time), k (mixture components)
 
         grad_logits = vec(sum(γresp, dims=1)) # Vector indexed by k (mixture components)

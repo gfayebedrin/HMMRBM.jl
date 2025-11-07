@@ -1,4 +1,27 @@
 """
+    cgfs!(out, x, y)
+    cgfs!(out, visible, inputs)
+    cgfs!(out, rbm, h)
+
+In place cumulant generating function (CGF) evaluations for RBM components.
+"""
+function cgfs!(out::AbstractArray, x, y)
+    out .= RestrictedBoltzmannMachines.cgfs(x, y)
+    return out
+end
+
+function cgfs!(out::AbstractArray, visible::RestrictedBoltzmannMachines.Binary, inputs::AbstractArray)
+    @. out = log1pexp(inputs + visible.θ)
+    return out
+end
+
+function cgfs!(out::AbstractArray, rbm::RestrictedBoltzmannMachines.RBM, h::AbstractArray)
+    inputs = RestrictedBoltzmannMachines.inputs_v_from_h(rbm, h)
+    cgfs!(out, rbm.visible, inputs)
+end
+
+
+"""
     log_P_v_given_h(rbm, v, h)
     log_P_v_given_h(rbm, Eᵥ, Wᵀv, h)
 
@@ -9,11 +32,13 @@ Use `log_P_v_given_h(rbm, Eᵥ, Wᵀv, h)` when repeatedly evaluating for the sa
 - `Eᵥ` should be precomputed as `energy(rbm.visible, v)`.
 - `Wᵀv` should be precomputed as `rbm.w' * v`.
 """
-function log_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, Eᵥ::Union{AbstractArray, Real}, Wᵀv::AbstractArray, h::AbstractArray)
+function log_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, Eᵥ::Union{AbstractArray,Real}, Wᵀv::AbstractArray, h::AbstractArray)
     interaction = my_mult(Wᵀv', h)
-    inputs = RestrictedBoltzmannMachines.inputs_v_from_h(rbm, h)
-    cumulant = RestrictedBoltzmannMachines.cgf(rbm.visible, inputs)
-    return interaction .- Eᵥ .- cumulant'
+    cumulants = similar(Wᵀv, (length(rbm.visible), Base.tail(size(h))...))
+    cgfs!(cumulants, rbm, h)
+    cumulant = sum(cumulants; dims=1)
+    length(cumulant) == 1 && (cumulant = only(cumulant))
+    @. return interaction - Eᵥ - cumulant
 end
 
 function log_P_v_given_h(rbm::RestrictedBoltzmannMachines.RBM, v::AbstractArray, h::AbstractArray)
@@ -26,11 +51,12 @@ end
 """
     log_P_v_given_h!(out, rbm, Eᵥ, Wᵀv, h)
 """
-function log_P_v_given_h!(out::AbstractArray, rbm::RestrictedBoltzmannMachines.RBM, Eᵥ::Union{AbstractArray, Real}, Wᵀv::AbstractArray, h::AbstractArray)
+function log_P_v_given_h!(out::AbstractArray, rbm::RestrictedBoltzmannMachines.RBM, Eᵥ::Union{AbstractArray,Real}, Wᵀv::AbstractArray, h::AbstractArray)
     interaction = my_mult(Wᵀv', h)
-    inputs = RestrictedBoltzmannMachines.inputs_v_from_h(rbm, h)
-    cumulant = RestrictedBoltzmannMachines.cgf(rbm.visible, inputs)
-    @. out = interaction - Eᵥ - cumulant'
+    cumulants = similar(Wᵀv, (length(rbm.visible), Base.tail(size(h))...))
+    cgfs!(cumulants, rbm, h)
+    cumulant = sum(cumulants; dims=1)
+    @. out = interaction - Eᵥ - cumulant
     return out
 end
 

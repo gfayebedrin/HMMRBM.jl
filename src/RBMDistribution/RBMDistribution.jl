@@ -64,11 +64,11 @@ function baum_value_gradient(dist::RBMEmissionFamily, obs_seq::AbstractVector, �
     Wᵀv = rbm(dist).w' * obs_mat
     Eᵥ = RestrictedBoltzmannMachines.energy(rbm(dist).visible, obs_mat)
 
-    function f(h)
+    function f(h::Vector)
         γⱼ ⋅ log_P_v_given_h(rbm(dist), Eᵥ, Wᵀv, h) - l2(dist) * sum(abs2, h)
     end
 
-    function grad!(∇ₕ, h)
+    function grad!(∇ₕ::Vector, h::Vector)
         ∇ₕ .= ∂ₕlog_P_v_given_h(rbm(dist), Wᵀv, h) * γⱼ .- 2 * l2(dist) * h
     end
 

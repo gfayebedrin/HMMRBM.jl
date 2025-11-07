@@ -210,8 +210,16 @@ function HiddenMarkovModels.initialization(hmm::SingleSeqHMM)
     return inits(parent(hmm))[sequence_index(hmm)]
 end
 
+function HiddenMarkovModels.log_initialization(hmm::SingleSeqHMM)
+    return loginits(parent(hmm))[sequence_index(hmm)]
+end
+
 function HiddenMarkovModels.transition_matrix(hmm::SingleSeqHMM)
     return transitions(parent(hmm))[sequence_index(hmm)]
+end
+
+function HiddenMarkovModels.log_transition_matrix(hmm::SingleSeqHMM)
+    return logtransitions(parent(hmm))[sequence_index(hmm)]
 end
 
 function HiddenMarkovModels.obs_distributions(hmm::SingleSeqHMM)

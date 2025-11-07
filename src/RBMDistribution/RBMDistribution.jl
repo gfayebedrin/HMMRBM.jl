@@ -60,16 +60,19 @@ end
 
 function baum_value_gradient(dist::RBMEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
-    obs_mat = reduce(hcat, obs_seq)
+    obs_mat = obs_seq isa Base.Slices ? Base.parent(obs_seq) : reduce(hcat, obs_seq)
     Wᵀv = rbm(dist).w' * obs_mat
     Eᵥ = RestrictedBoltzmannMachines.energy(rbm(dist).visible, obs_mat)
 
+    out_f = similar(γⱼ)
+    out_∇ = similar(γⱼ, (length(rbm(dist).hidden), length(γⱼ)))
+
     function f(h::Vector)
-        γⱼ ⋅ log_P_v_given_h(rbm(dist), Eᵥ, Wᵀv, h) - l2(dist) * sum(abs2, h)
+        γⱼ ⋅ log_P_v_given_h!(out_f, rbm(dist), Eᵥ, Wᵀv, h) - l2(dist) * sum(abs2, h)
     end
 
     function grad!(∇ₕ::Vector, h::Vector)
-        ∇ₕ .= ∂ₕlog_P_v_given_h(rbm(dist), Wᵀv, h) * γⱼ .- 2 * l2(dist) * h
+        ∇ₕ .= ∂ₕlog_P_v_given_h!(out_∇, rbm(dist), Wᵀv, h) * γⱼ .- 2 * l2(dist) * h
     end
 
     return f, grad!

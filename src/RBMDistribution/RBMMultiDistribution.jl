@@ -95,7 +95,8 @@ end
 function baum_value_gradient(dist::RBMMultiEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
     # γⱼ: Vector indexed by t (time)
-    o = reduce(hcat, obs_seq)' # Matrix indexed by t (time), i (visible units)
+    obs_mat = obs_seq isa Base.Slices ? Base.parent(obs_seq) : reduce(hcat, obs_seq)
+    o = obs_mat' # Matrix indexed by t (time), i (visible units)
     W = rbm(dist).w # Matrix indexed by i (visible units), μ (hidden units)
     oW = o * W # Matrix indexed by t (time), μ (hidden units)
     Eₒ = RestrictedBoltzmannMachines.energy(rbm(dist).visible, o') # Vector indexed by t (time)

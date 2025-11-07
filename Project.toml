@@ -1,6 +1,6 @@
 name = "HMMRBM"
 uuid = "bfa31696-7586-4689-9387-6c23d6d4ad35"
-version = "0.3.0"
+version = "0.3.1"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"

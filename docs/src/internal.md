@@ -11,13 +11,6 @@ HMMRBM.stack_vector_matrix
 HMMRBM.unstack_vector_matrix
 ```
 
-## Multi-sequence Helpers
-
-```@docs
-HMMRBM.state_count(::HMMRBM.MultiSeqHMM)
-HMMRBM.state_count(::HMMRBM.SingleSeqHMM)
-```
-
 ## RBM Utilities
 
 ```@docs

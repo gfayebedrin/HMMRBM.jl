@@ -32,6 +32,7 @@ export logtransitions
 export emissions
 export emission_parameters
 export hyperparameters
+export state_count
 export parent
 export sequence_index
 

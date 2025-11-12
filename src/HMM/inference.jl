@@ -112,7 +112,7 @@ function StatsAPI.fit!(
         for t in 1:(length(ξ)-1)
             scratch .+= ξ[t]
         end
-        trans .= scratch
+        trans .= scratch .+ 1e-9 # smoothing
         foreach(sum_to_one!, eachrow(trans))
         logtrans .= log.(trans)
     end

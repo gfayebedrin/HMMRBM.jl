@@ -30,6 +30,7 @@ HMMRBM.hmm_rbm
 HMMRBM.distribution
 HMMRBM.family
 HMMRBM.parameter
+HMMRBM.state_count
 HMMRBM.baum_value_gradient
 ```
 

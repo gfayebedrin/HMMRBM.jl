@@ -127,14 +127,14 @@ Get the shared emission parameters for the HMM.
 emission_parameters(hmm::MultiSeqHMM) = hmm.θ
 
 """
-    hyperparameters(hmm::MultiSeqHMM)
+    hyperparameters(hmm)
 
 Get the hyperparameters `NamedTuple` for the HMM.
 """
 hyperparameters(hmm::MultiSeqHMM) = hmm.hyperparameters
 
 """
-    state_count(hmm::MultiSeqHMM)
+    state_count(hmm)
 
 Get the number of hidden states in the HMM.
 """
@@ -191,18 +191,8 @@ Get the sequence index of the single-sequence HMM within its parent `MultiSeqHMM
 """
 sequence_index(hmm::SingleSeqHMM) = hmm.sequence_index
 
-"""
-    hyperparameters(hmm::SingleSeqHMM)
-
-Get the hyperparameters `NamedTuple` of the parent `MultiSeqHMM`.
-"""
 hyperparameters(hmm::SingleSeqHMM) = hyperparameters(parent(hmm))
 
-"""
-    state_count(hmm::SingleSeqHMM)
-
-Get the number of hidden states in the single-sequence HMM.
-"""
 state_count(hmm::SingleSeqHMM) = state_count(parent(hmm))
 
 # Interface

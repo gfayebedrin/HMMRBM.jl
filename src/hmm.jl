@@ -18,7 +18,7 @@ function hmm_rbm(rbms::AbstractVector{<:RestrictedBoltzmannMachines.RBM}, n_stat
     inits = [copy(init) for _ in rbms]
 
     function random_transition()
-        trans = abs.(1 .+ 0.01 .* randn(n_states, n_states))
+        trans = abs.(1 .+ 0.01 .* randn(n_states, n_states)) + I
         foreach(sum_to_one!, eachrow(trans))
         trans
     end

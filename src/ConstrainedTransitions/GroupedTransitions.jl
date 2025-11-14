@@ -1,153 +1,99 @@
 # ----------------------------------------------------------------------
-#  STRUCT DEFINITION
+#  STRUCT DEFINITION (generic within/between types)
 # ----------------------------------------------------------------------
 
-"""
-    GroupedTransitions(groups, within, between)
-
-Transition model for HMMs with P groups of K states each.
-
-- groups[i] = group index of state i (1..P)
-- within[i,j] = transition probability from i→j when both in same group
-- between[g,h] = shared transition probability for any i∈g, j∈h (g≠h)
-
-This object behaves like an AbstractMatrix (read-only) with size N×N.
-"""
-struct GroupedTransitions{T} <: AbstractMatrix{T}
-    groups::Vector{Int}    # length N
-    P::Int                 # number of groups
-    K::Int                 # group size
-    within::Matrix{T}      # N×N (only diagonal blocks used)
-    between::Matrix{T}     # P×P, off-diagonal entries used
-    N::Int
+struct GroupedTransitions{T, W<:AbstractArray{T,3}, B<:AbstractMatrix{T}} <: AbstractMatrix{T}
+    within::W             # P × K × K
+    between::B            # P × P
+    # inner constructor enforces consistency
+    function GroupedTransitions{T,W,B}(within::W, between::B) where {T,W<:AbstractArray{T,3},B<:AbstractMatrix{T}}
+        P, K1, K2 = size(within)
+        @assert K1 == K2 "Within blocks must be K×K"
+        @assert size(between) == (P, P) "Between must be P×P"
+        new{T,W,B}(within, between)
+    end
 end
 
-
-# ----------------------------------------------------------------------
-#  CONSTRUCTOR
-# ----------------------------------------------------------------------
-
-function GroupedTransitions(groups::Vector{Int},
-                            within::Matrix{T},
-                            between::Matrix{T}) where {T}
-
-    N = length(groups)
-    P = maximum(groups)
-    K = N ÷ P
-
-    @assert size(within) == (N, N) "within must be N×N"
-    @assert size(between) == (P, P) "between must be P×P"
-
-    new{T}(groups, P, K, within, between, N)
+# External convenience constructor
+function GroupedTransitions(within::AbstractArray{T,3}, between::AbstractMatrix{T}) where {T}
+    return GroupedTransitions{T, typeof(within), typeof(between)}(within, between)
 end
 
-
-# ----------------------------------------------------------------------
-#  ABSTRACTMATRIX INTERFACE
-# ----------------------------------------------------------------------
-
-Base.size(A::GroupedTransitions) = (A.N, A.N)
+# Derived sizes (no stored P, K, N)
+Base.size(A::GroupedTransitions) = (size(A.within,1)*size(A.within,2), size(A.within,1)*size(A.within,2))
 Base.eltype(::Type{GroupedTransitions{T}}) where {T} = T
 Base.IndexStyle(::Type{<:GroupedTransitions}) = IndexCartesian()
 
-"""
-    A[i,j]
+# convenience accessors
+groups(A::GroupedTransitions) = size(A.within,1)
+K(A::GroupedTransitions) = size(A.within,2)
+N(A::GroupedTransitions) = size(A.within,1) * size(A.within,2)
 
-Matrix-like access: if states i and j share a group, return within-block
-transition; otherwise return between-block transition.
-"""
+# map global index → (group, local_index)
+@generated function _split_index(i::Int, K::Int)
+    quote
+        g = (i - 1) ÷ K + 1
+        k = (i - 1) % K + 1
+        return g, k
+    end
+end
+
 function Base.getindex(A::GroupedTransitions{T}, i::Int, j::Int) where {T}
-    gi = A.groups[i]
-    gj = A.groups[j]
-
+    K = size(A.within,2)
+    gi, ki = _split_index(i, K)
+    gj, kj = _split_index(j, K)
     if gi == gj
-        return A.within[i,j]
+        return A.within[gi, ki, kj]
     else
         return A.between[gi, gj]
     end
 end
 
-
 # ----------------------------------------------------------------------
-#  BROADCASTING (LEVEL 2 STRUCTURE-PRESERVING)
+#  BROADCASTING (structure-preserving)
 # ----------------------------------------------------------------------
 
-Base.BroadcastStyle(::Type{<:GroupedTransitions}) =
-    Base.Broadcast.ArrayStyle{GroupedTransitions}()
+Base.BroadcastStyle(::Type{<:GroupedTransitions}) = Base.Broadcast.ArrayStyle{GroupedTransitions}()
 
-"""
-    broadcast(f, A::GroupedTransitions)
-
-Apply an elementwise function f to all transition probabilities,
-preserving the grouped structure. Broadcasting returns a new
-GroupedTransitions object.
-"""
 function Base.broadcast(f, A::GroupedTransitions)
-    within_new  = similar(A.within)
-    between_new = similar(A.between)
+    T = eltype(A)
+    W = similar(A.within)
+    B = similar(A.between)
 
-    # apply f to within-block
-    @inbounds for i in 1:A.N
-        gi = A.groups[i]
-        for j in 1:A.N
-            if A.groups[j] == gi
-                within_new[i,j] = f(A.within[i,j])
-            else
-                within_new[i,j] = zero(eltype(A))  # unused, keep clean
-            end
-        end
+    @inbounds for g in 1:size(A.within,1), ki in 1:size(A.within,2), kj in 1:size(A.within,3)
+        W[g,ki,kj] = f(A.within[g,ki,kj])
     end
 
-    # apply f to between-block
-    @inbounds for g in 1:A.P, h in 1:A.P
-        if g == h
-            between_new[g,h] = zero(eltype(A))
-        else
-            between_new[g,h] = f(A.between[g,h])
-        end
+    @inbounds for g in 1:size(A.between,1), h in 1:size(A.between,2)
+        B[g,h] = g == h ? zero(T) : f(A.between[g,h])
     end
 
-    return GroupedTransitions(A.groups, within_new, between_new)
+    return GroupedTransitions(W, B)
 end
-
 
 # ----------------------------------------------------------------------
 #  BAUM–WELCH UPDATE
 # ----------------------------------------------------------------------
 
-"""
-    baumwelch_update!(A::GroupedTransitions, Nξ)
+function baumwelch_update!(A::GroupedTransitions{T}, Nξ::AbstractMatrix{T}) where {T}
+    P = size(A.within,1)
+    K = size(A.within,2)
+    N = P*K
 
-Update the grouped transition parameters in-place given expected counts Nξ.
-Implements the block-structured closed-form EM updates:
-
-- within-block rows follow:
-      a_ij = r_g * (N_ij / sum_j N_ij)
-  with r_g = N_{g,in} / N_{g,out}
-
-- between-block:
-      c_{g→h} = N_{g→h} / (K * N_{g,out})
-"""
-function baumwelch_update!(A::GroupedTransitions{T},
-                           Nξ::AbstractMatrix{T}) where {T}
-
-    groups = A.groups
-    P, K, N = A.P, A.K, A.N
-
-    # group totals
-    N_in  = zeros(T, P)
     N_out = zeros(T, P)
+    N_in  = zeros(T, P)
     N_gh  = zeros(T, P, P)
+    N_blk = zeros(T, P, K, K)
 
-    # accumulate counts
     @inbounds for i in 1:N
-        gi = groups[i]
+        gi, ki = _split_index(i, K)
         for j in 1:N
             ξij = Nξ[i,j]
-            gj = groups[j]
+            gj, kj = _split_index(j, K)
             N_out[gi] += ξij
             if gi == gj
                 N_in[gi] += ξij
+                N_blk[gi,ki,kj] += ξij
             else
                 N_gh[gi,gj] += ξij
             end
@@ -156,41 +102,51 @@ function baumwelch_update!(A::GroupedTransitions{T},
 
     epsT = eps(T)
 
-    # update within/between
     @inbounds for g in 1:P
         rg = N_in[g] / (N_out[g] + epsT)
-
-        # update within-block for all i in group g
-        for i in 1:N
-            gi = groups[i]
-            gi == g || continue
-
-            # denominator: transitions from i to states in g
-            denom = zero(T)
-            for j in 1:N
-                if groups[j] == g
-                    denom += Nξ[i,j]
+        for ki in 1:K
+            denom = sum(N_blk[g,ki,:])
+            if denom == 0
+                for kj in 1:K
+                    A.within[g,ki,kj] = T(1)/K
                 end
-            end
-
-            for j in 1:N
-                if groups[j] == g
-                    if denom == 0
-                        A.within[i,j] = T(1)/K
-                    else
-                        A.within[i,j] = rg * (Nξ[i,j] / denom)
-                    end
+            else
+                for kj in 1:K
+                    A.within[g,ki,kj] = rg * (N_blk[g,ki,kj] / denom)
                 end
             end
         end
+    end
 
-        # update between-block
-        for h in 1:P
-            if h != g
-                A.between[g,h] = N_gh[g,h] / (K * (N_out[g] + epsT))
-            end
+    @inbounds for g in 1:P, h in 1:P
+        if g != h
+            A.between[g,h] = N_gh[g,h] / (K * (N_out[g] + epsT))
         end
     end
 
     return A
 end
+
+# ----------------------------------------------------------------------
+#  LOG-VIEW (READ-ONLY)
+# ----------------------------------------------------------------------
+
+struct LogView{T,GT<:GroupedTransitions{T}} <: AbstractMatrix{T}
+    parent::GT
+end
+
+Base.size(L::LogView) = size(L.parent)
+Base.eltype(::Type{LogView{T}}) where {T} = T
+Base.IndexStyle(::Type{<:LogView}) = IndexCartesian()
+
+function Base.getindex(L::LogView{T}, i::Int, j::Int) where {T}
+    return log(L.parent[i,j])
+end
+
+"""
+    logview(A::GroupedTransitions)
+
+Return a read-only matrix-like object where each entry is log(A[i,j]).
+Useful to avoid materializing a dense log matrix.
+"""
+logview(A::GroupedTransitions) = LogView(A)

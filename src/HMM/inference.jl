@@ -94,9 +94,10 @@ end
 
 Update the transition matrix `trans` and `logtrans` in place using the expected transition counts `expected`.
 """
-function baum_welch_transition_update!(trans::T, logtrans::T, expected::AbstractMatrix) where {T<:AbstractMatrix}
+function baum_welch_transition_update!(trans::T, logtrans::LT, expected::AbstractMatrix) where {T<:AbstractMatrix, LT<:AbstractMatrix}
     @argcheck size(trans) == size(expected) DimensionMismatch
-    @argcheck hasmethod(setindex!, (T, eltype(expected), Int, Int)) TypeError
+    @argcheck hasmethod(setindex!, (T, eltype(trans), Int, Int)) TypeError
+    @argcheck hasmethod(setindex!, (LT, eltype(logtrans), Int, Int)) TypeError
     trans .= expected
     foreach(sum_to_one!, eachrow(trans))
     logtrans .= log.(trans)

@@ -89,6 +89,21 @@ function HiddenMarkovModels.baum_welch(
 end
 
 
+"""
+    baum_welch_transition_update!(trans, logtrans, expected)
+
+Update the transition matrix `trans` and `logtrans` in place using the expected transition counts `expected`.
+"""
+function baum_welch_transition_update!(trans::T, logtrans::T, expected::AbstractMatrix) where {T<:AbstractMatrix}
+    @argcheck size(trans) == size(expected) DimensionMismatch
+    @argcheck hasmethod(setindex!, (T, eltype(expected), Int, Int)) TypeError
+    trans .= expected
+    foreach(sum_to_one!, eachrow(trans))
+    logtrans .= log.(trans)
+    return nothing
+end
+
+
 function StatsAPI.fit!(
     hmm::MultiSeqHMM,
     fb_storages::Vector{<:HiddenMarkovModels.ForwardBackwardStorage},
@@ -112,9 +127,7 @@ function StatsAPI.fit!(
         for t in 1:(length(ξ)-1)
             scratch .+= ξ[t]
         end
-        trans .= scratch .+ 1e-9 # smoothing
-        foreach(sum_to_one!, eachrow(trans))
-        logtrans .= log.(trans)
+        baum_welch_transition_update!(trans, logtrans, scratch .+ 1e-9)
     end
 
     # Fit observations

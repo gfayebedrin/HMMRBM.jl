@@ -32,6 +32,7 @@ HMMRBM.family
 HMMRBM.parameter
 HMMRBM.state_count
 HMMRBM.baum_value_gradient
+HMMRBM.baum_welch_transition_update!
 ```
 
 ## Saving

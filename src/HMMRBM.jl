@@ -37,6 +37,7 @@ export parent
 export sequence_index
 
 include("HMM/inference.jl")
+export baum_welch_transition_update!
 
 include("RBMDistribution/utils.jl")
 include("RBMDistribution/rbm_gradients.jl")
@@ -47,6 +48,8 @@ include("RBMDistribution/RBMMultiDistribution.jl")
 export RBMMultiEmission
 export RBMMultiEmissionFamily
 include("RBMDistribution/constructors.jl")
+
+include("ConstrainedTransitions/GroupedTransitions.jl")
 
 include("hmm.jl")
 export hmm_rbm

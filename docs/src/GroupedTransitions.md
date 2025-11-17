@@ -31,11 +31,11 @@ HMMRBM.GroupedTransitions
 ```@docs
 HMMRBM.group_count
 HMMRBM.states_per_group
-HMMRBM.state_count(::GroupedTransitions)
+HMMRBM.state_count(::HMMRBM.GroupedTransitions)
 ```
 
 ## Training support
 
 ```@docs
-HMMRBM.baum_welch_transition_update!(::HMMRBM.GroupedTransitions, ::HMMRBM.GroupedTransitions, ::Any)
+HMMRBM.baum_welch_transition_update!(::HMMRBM.GroupedTransitions, ::HMMRBM.GroupedTransitions, ::AbstractMatrix)
 ```

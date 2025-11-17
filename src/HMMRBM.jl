@@ -50,6 +50,9 @@ export RBMMultiEmissionFamily
 include("RBMDistribution/constructors.jl")
 
 include("ConstrainedTransitions/GroupedTransitions.jl")
+export GroupedTransitions
+export group_count
+export states_per_group
 
 include("hmm.jl")
 export hmm_rbm

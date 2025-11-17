@@ -11,6 +11,7 @@ makedocs(
     pages=[
         "Home" => "index.md",
         "Multi-sequence HMMs" => "HMM.md",
+        "Grouped transitions" => "GroupedTransitions.md",
         "RBM emissions" => "RBMdist.md",
         "Internal utilities" => "internal.md",
     ],

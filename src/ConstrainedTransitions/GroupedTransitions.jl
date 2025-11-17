@@ -1,12 +1,14 @@
-# ----------------------------------------------------------------------
-#  STRUCT DEFINITION (generic within/between types)
-# ----------------------------------------------------------------------
+"""
+    struct GroupedTransitions{T, W<:AbstractArray{T,3}, B<:AbstractMatrix{T}} <: AbstractMatrix{T}
 
-struct GroupedTransitions{T, W<:AbstractArray{T,3}, B<:AbstractMatrix{T}} <: AbstractMatrix{T}
+A transition matrix with grouped structure. The states are divided into `P` groups, each containing `K` states.
+Transitions within the same group are free, while transitions between different groups share the same probability.
+"""
+struct GroupedTransitions{T,W<:AbstractArray{T,3},B<:AbstractMatrix{T}} <: AbstractMatrix{T}
     within::W             # P × K × K
     between::B            # P × P
-    # inner constructor enforces consistency
-    function GroupedTransitions{T,W,B}(within::W, between::B) where {T,W<:AbstractArray{T,3},B<:AbstractMatrix{T}}
+
+    function GroupedTransitions(within::W, between::B) where {T,W<:AbstractArray{T,3},B<:AbstractMatrix{T}}
         P, K1, K2 = size(within)
         @assert K1 == K2 "Within blocks must be K×K"
         @assert size(between) == (P, P) "Between must be P×P"
@@ -14,32 +16,84 @@ struct GroupedTransitions{T, W<:AbstractArray{T,3}, B<:AbstractMatrix{T}} <: Abs
     end
 end
 
-# External convenience constructor
-function GroupedTransitions(within::AbstractArray{T,3}, between::AbstractMatrix{T}) where {T}
-    return GroupedTransitions{T, typeof(within), typeof(between)}(within, between)
+# Constructors
+
+"""
+    GroupedTransitions(W, B, group_count, states_per_group)
+    GroupedTransitions(T, group_count, states_per_group)
+    GroupedTransitions(group_count, states_per_group)
+
+Construct a `GroupedTransitions` instance with `group_count` groups and `states_per_group` states per group.
+Type `T` specifies the element type (default `Float64`).
+Types `W` and `B` specify the array types (default `Array{T,3}` and `Matrix{T}`).
+"""
+function GroupedTransitions(
+    W::Type{<:AbstractArray{T,3}},
+    B::Type{<:AbstractMatrix{T}},
+    group_count::Integer,
+    states_per_group::Integer
+) where {T}
+    P = group_count
+    K = states_per_group
+    val = one(T) / (P * K)
+
+    within = W(fill(val, P, K, K))
+    between = B(fill(val, P, P))
+
+    return GroupedTransitions(within, between)
 end
 
-# Derived sizes (no stored P, K, N)
-Base.size(A::GroupedTransitions) = (size(A.within,1)*size(A.within,2), size(A.within,1)*size(A.within,2))
+function GroupedTransitions(
+    T::Type{<:Real},
+    group_count::Integer,
+    states_per_group::Integer
+)
+    return GroupedTransitions(Array{T,3}, Matrix{T}, group_count, states_per_group)
+end
+
+function GroupedTransitions(
+    group_count::Integer,
+    states_per_group::Integer
+)
+    return GroupedTransitions(Float64, group_count, states_per_group)
+end
+
+# Accessors
+"""
+    group_count(A::GroupedTransitions)
+
+Get the number of groups represented by the grouped transition matrix.
+"""
+group_count(A::GroupedTransitions) = size(A.within, 1)
+
+"""
+    states_per_group(A::GroupedTransitions)
+
+Get the number of states per group represented by the grouped transition matrix.
+"""
+states_per_group(A::GroupedTransitions) = size(A.within, 2)
+
+"""
+    state_count(A::GroupedTransitions)
+
+Get the total number of states represented by the grouped transition matrix.
+"""
+state_count(A::GroupedTransitions) = size(A.within, 1) * size(A.within, 2)
+
+# Derived sizes
+Base.size(A::GroupedTransitions) = (state_count(A), state_count(A))
 Base.eltype(::Type{GroupedTransitions{T}}) where {T} = T
 Base.IndexStyle(::Type{<:GroupedTransitions}) = IndexCartesian()
 
-# convenience accessors
-groups(A::GroupedTransitions) = size(A.within,1)
-K(A::GroupedTransitions) = size(A.within,2)
-N(A::GroupedTransitions) = size(A.within,1) * size(A.within,2)
-
 # map global index → (group, local_index)
-@generated function _split_index(i::Int, K::Int)
-    quote
-        g = (i - 1) ÷ K + 1
-        k = (i - 1) % K + 1
-        return g, k
-    end
+function _split_index(i::Int, K::Int)
+    g = (i - 1) ÷ K + 1
+    k = (i - 1) % K + 1
+    return g, k
 end
 
-function Base.getindex(A::GroupedTransitions{T}, i::Int, j::Int) where {T}
-    K = size(A.within,2)
+function Base.getindex(A::GroupedTransitions, i::Int, j::Int)
+    K = states_per_group(A)
     gi, ki = _split_index(i, K)
     gj, kj = _split_index(j, K)
     if gi == gj
@@ -49,104 +103,92 @@ function Base.getindex(A::GroupedTransitions{T}, i::Int, j::Int) where {T}
     end
 end
 
-# ----------------------------------------------------------------------
-#  BROADCASTING (structure-preserving)
-# ----------------------------------------------------------------------
+# Structure preserving broadcast
 
 Base.BroadcastStyle(::Type{<:GroupedTransitions}) = Base.Broadcast.ArrayStyle{GroupedTransitions}()
 
-function Base.broadcast(f, A::GroupedTransitions)
+function _grouped_broadcast(f, A::GroupedTransitions)
     T = eltype(A)
     W = similar(A.within)
     B = similar(A.between)
 
-    @inbounds for g in 1:size(A.within,1), ki in 1:size(A.within,2), kj in 1:size(A.within,3)
-        W[g,ki,kj] = f(A.within[g,ki,kj])
+    @inbounds for g in 1:size(A.within, 1), ki in 1:size(A.within, 2), kj in 1:size(A.within, 3)
+        W[g, ki, kj] = f(A.within[g, ki, kj])
     end
 
-    @inbounds for g in 1:size(A.between,1), h in 1:size(A.between,2)
-        B[g,h] = g == h ? zero(T) : f(A.between[g,h])
+    @inbounds for g in 1:size(A.between, 1), h in 1:size(A.between, 2)
+        B[g, h] = g == h ? zero(T) : f(A.between[g, h])
     end
 
     return GroupedTransitions(W, B)
 end
 
-# ----------------------------------------------------------------------
-#  BAUM–WELCH UPDATE
-# ----------------------------------------------------------------------
+Base.broadcast(f, A::GroupedTransitions) = _grouped_broadcast(f, A)
 
-function baumwelch_update!(A::GroupedTransitions{T}, Nξ::AbstractMatrix{T}) where {T}
-    P = size(A.within,1)
-    K = size(A.within,2)
-    N = P*K
+function Base.copy(bc::Base.Broadcast.Broadcasted{Base.Broadcast.ArrayStyle{GroupedTransitions}})
+    @argcheck length(bc.args) == 1 "broadcast over GroupedTransitions only supports unary functions"
+    arg = first(bc.args)
+    A = arg isa GroupedTransitions ? arg :
+        arg isa Base.Broadcast.Extruded ? arg.value :
+        throw(ArgumentError("Unsupported broadcast argument type $(typeof(arg))"))
+    return _grouped_broadcast(bc.f, A)
+end
 
-    N_out = zeros(T, P)
-    N_in  = zeros(T, P)
-    N_gh  = zeros(T, P, P)
-    N_blk = zeros(T, P, K, K)
+# Baum-Welch update
+
+function baum_welch_transition_update!(trans::GroupedTransitions{T}, logtrans::GroupedTransitions, expected::AbstractMatrix) where {T}
+    P = group_count(trans)
+    K = states_per_group(trans)
+    N = state_count(trans)
+
+    expected_out = zeros(T, P)
+    expected_in = zeros(T, P)
+    expected_between = zeros(T, P, P)
+    expected_within = zeros(T, P, K, K)
 
     @inbounds for i in 1:N
-        gi, ki = _split_index(i, K)
+        groupᵢ, localᵢ = _split_index(i, K)
         for j in 1:N
-            ξij = Nξ[i,j]
-            gj, kj = _split_index(j, K)
-            N_out[gi] += ξij
-            if gi == gj
-                N_in[gi] += ξij
-                N_blk[gi,ki,kj] += ξij
+            ξᵢⱼ = expected[i, j]
+            groupⱼ, localⱼ = _split_index(j, K)
+            expected_out[groupᵢ] += ξᵢⱼ
+            if groupᵢ == groupⱼ
+                expected_in[groupᵢ] += ξᵢⱼ
+                expected_within[groupᵢ, localᵢ, localⱼ] += ξᵢⱼ
             else
-                N_gh[gi,gj] += ξij
+                expected_between[groupᵢ, groupⱼ] += ξᵢⱼ
             end
         end
     end
 
     epsT = eps(T)
 
+    # Within-group transitions
     @inbounds for g in 1:P
-        rg = N_in[g] / (N_out[g] + epsT)
+        group_persistence = expected_in[g] / (expected_out[g] + epsT)
         for ki in 1:K
-            denom = sum(N_blk[g,ki,:])
+            denom = sum(expected_within[g, ki, :])
             if denom == 0
                 for kj in 1:K
-                    A.within[g,ki,kj] = T(1)/K
+                    trans.within[g, ki, kj] = 1 / K
                 end
             else
                 for kj in 1:K
-                    A.within[g,ki,kj] = rg * (N_blk[g,ki,kj] / denom)
+                    trans.within[g, ki, kj] = group_persistence * (expected_within[g, ki, kj] / denom)
                 end
             end
         end
     end
 
+    # Between-group transitions
     @inbounds for g in 1:P, h in 1:P
         if g != h
-            A.between[g,h] = N_gh[g,h] / (K * (N_out[g] + epsT))
+            trans.between[g, h] = expected_between[g, h] / (K * (expected_out[g] + epsT))
         end
     end
 
-    return A
+    logtrans.within .= log.(trans.within)
+    logtrans.between .= log.(trans.between)
+
+    return nothing
 end
-
-# ----------------------------------------------------------------------
-#  LOG-VIEW (READ-ONLY)
-# ----------------------------------------------------------------------
-
-struct LogView{T,GT<:GroupedTransitions{T}} <: AbstractMatrix{T}
-    parent::GT
-end
-
-Base.size(L::LogView) = size(L.parent)
-Base.eltype(::Type{LogView{T}}) where {T} = T
-Base.IndexStyle(::Type{<:LogView}) = IndexCartesian()
-
-function Base.getindex(L::LogView{T}, i::Int, j::Int) where {T}
-    return log(L.parent[i,j])
-end
-
-"""
-    logview(A::GroupedTransitions)
-
-Return a read-only matrix-like object where each entry is log(A[i,j]).
-Useful to avoid materializing a dense log matrix.
-"""
-logview(A::GroupedTransitions) = LogView(A)

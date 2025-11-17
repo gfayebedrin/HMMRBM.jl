@@ -12,7 +12,7 @@ julia> trans = HMMRBM.GroupedTransitions(3, 2);  # 3 groups, 2 states each
 julia> size(trans)
 (6, 6)
 
-julia> trans[1, 4]               # state 1 → state 4 spans two groups
+julia> trans[1, 4]
 0.16666666666666666
 ```
 
@@ -31,11 +31,11 @@ HMMRBM.GroupedTransitions
 ```@docs
 HMMRBM.group_count
 HMMRBM.states_per_group
-HMMRBM.state_count
+HMMRBM.state_count(::GroupedTransitions)
 ```
 
 ## Training support
 
 ```@docs
-HMMRBM.baum_welch_transition_update!
+HMMRBM.baum_welch_transition_update!(::HMMRBM.GroupedTransitions, ::HMMRBM.GroupedTransitions, ::Any)
 ```

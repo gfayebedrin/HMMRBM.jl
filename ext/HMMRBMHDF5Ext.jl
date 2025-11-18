@@ -5,6 +5,8 @@ using HDF5
 
 const _HDF5Parent = Union{HDF5.File,HDF5.Group}
 
+# Save a MultiSeqHMM to an HDF5 group
+
 function HMMRBM.MultiSeqHMM_to_group!(group::_HDF5Parent, hmm::HMMRBM.MultiSeqHMM; kwargs...)
     inits_group = create_group(group, "inits")
     for (i, init) in enumerate(HMMRBM.inits(hmm))
@@ -56,6 +58,12 @@ function HMMRBM.load_hmm(filename::String; emissions)
     h5open(filename, "r") do file
         HMMRBM.MultiSeqHMM_from_group(file; emissions)
     end
+end
+
+# Compatibility with GroupedTransitions
+
+function HDF5.write(parent::_HDF5Parent, key::AbstactString, mat::GroupedTransitions)
+    write(parent, key, Matrix(mat))
 end
 
 end

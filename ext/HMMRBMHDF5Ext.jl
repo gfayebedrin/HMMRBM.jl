@@ -62,7 +62,7 @@ end
 
 # Compatibility with GroupedTransitions
 
-function HDF5.write(parent::_HDF5Parent, key::AbstactString, mat::GroupedTransitions)
+function HDF5.write(parent::_HDF5Parent, key::AbstractString, mat::GroupedTransitions)
     write(parent, key, Matrix(mat))
 end
 

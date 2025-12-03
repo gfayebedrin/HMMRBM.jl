@@ -107,7 +107,7 @@ end
 
 Base.BroadcastStyle(::Type{<:GroupedTransitions}) = Base.Broadcast.ArrayStyle{GroupedTransitions}()
 
-function _grouped_broadcast(f, A::GroupedTransitions)
+function _broadcast(f, A::GroupedTransitions)
     T = eltype(A)
     W = similar(A.within)
     B = similar(A.between)
@@ -123,7 +123,7 @@ function _grouped_broadcast(f, A::GroupedTransitions)
     return GroupedTransitions(W, B)
 end
 
-Base.broadcast(f, A::GroupedTransitions) = _grouped_broadcast(f, A)
+Base.broadcast(f, A::GroupedTransitions) = _broadcast(f, A)
 
 function Base.copy(bc::Base.Broadcast.Broadcasted{Base.Broadcast.ArrayStyle{GroupedTransitions}})
     @argcheck length(bc.args) == 1 "broadcast over GroupedTransitions only supports unary functions"
@@ -131,7 +131,7 @@ function Base.copy(bc::Base.Broadcast.Broadcasted{Base.Broadcast.ArrayStyle{Grou
     A = arg isa GroupedTransitions ? arg :
         arg isa Base.Broadcast.Extruded ? arg.value :
         throw(ArgumentError("Unsupported broadcast argument type $(typeof(arg))"))
-    return _grouped_broadcast(bc.f, A)
+    return _broadcast(bc.f, A)
 end
 
 # Baum-Welch update

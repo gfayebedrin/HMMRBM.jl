@@ -54,6 +54,11 @@ export GroupedTransitions
 export group_count
 export states_per_group
 
+include("ConstrainedTransitions/SparseTransitions.jl")
+export SparseTransitions
+
+include("ConstrainedTransitions/broadcasting.jl")
+
 include("hmm.jl")
 export hmm_rbm
 

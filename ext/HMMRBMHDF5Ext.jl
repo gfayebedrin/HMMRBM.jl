@@ -60,9 +60,9 @@ function HMMRBM.load_hmm(filename::String; emissions)
     end
 end
 
-# Compatibility with GroupedTransitions
+# Compatibility with constrained transition types
 
-function HDF5.write(parent::_HDF5Parent, key::AbstractString, mat::GroupedTransitions)
+function HDF5.write(parent::_HDF5Parent, key::AbstractString, mat::HMMRBM.ConstrainedTransitions)
     write(parent, key, Matrix(mat))
 end
 

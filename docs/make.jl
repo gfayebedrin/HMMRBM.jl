@@ -12,6 +12,7 @@ makedocs(
         "Home" => "index.md",
         "Multi-sequence HMMs" => "HMM.md",
         "Grouped transitions" => "GroupedTransitions.md",
+        "Sparse transitions" => "SparseTransitions.md",
         "RBM emissions" => "RBMdist.md",
         "Internal utilities" => "internal.md",
     ],

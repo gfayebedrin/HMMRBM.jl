@@ -1,7 +1,9 @@
 """
     struct SparseTransitions{T, M} where {T, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
 
-A transition matrix with a penalty on non diagonal elements.
+A transition matrix with a penalty on non diagonal elements. During Baum-Welch updates the
+off-diagonals are shrunk by `λ` before rows are renormalised, promoting self-transitions
+and sparsity away from the diagonal while keeping the matrix row-stochastic.
 """
 struct SparseTransitions{T,M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     transitions::M

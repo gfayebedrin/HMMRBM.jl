@@ -1,6 +1,11 @@
 """
     struct SparseTransitions{T, M} where {T, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
 
+    SparseTransitions(transition, λ)
+    SparseTransitions(::Type{<:AbstractMatrix}, state_count, λ)
+    SparseTransitions(::Type{<:Real}, state_count, λ)
+    SparseTransitions(state_count, λ)
+
 A transition matrix with a penalty on non diagonal elements. During Baum-Welch updates the
 off-diagonals are shrunk by `λ` before rows are renormalised, promoting self-transitions
 and sparsity away from the diagonal while keeping the matrix row-stochastic.
@@ -12,13 +17,6 @@ end
 
 # Constructors
 
-"""
-    SparseTransitions(M, state_count, λ)
-    SparseTransitions(T, state_count, λ)
-    SparseTransitions(state_count, λ)
-
-Construct a `SparseTransitions` instance with `state_count` states and uniform transitions.
-"""
 function SparseTransitions(M::Type{<:AbstractMatrix{T}}, state_count::Integer, λ::Real) where {T}
     transitions = M(fill(one(T) / state_count, state_count, state_count))
     return SparseTransitions(transitions, λ)

@@ -1,7 +1,12 @@
 """
     struct GroupedTransitions{T, W<:AbstractArray{T,3}, B<:AbstractMatrix{T}} <: AbstractMatrix{T}
 
-A transition matrix with grouped structure. The states are divided into `P` groups, each containing `K` states.
+    GroupedTransitions(within, between)
+    GroupedTransitions(::Type{<:AbstractArray}, ::Type{<:AbstractMatrix}, group_count, states_per_group)
+    GroupedTransitions(::Type{<:Real}, group_count, states_per_group)
+    GroupedTransitions(group_count, states_per_group)
+
+A transition matrix with grouped structure. The states are divided into `group_count` groups, each containing `states_per_group` states.
 Transitions within the same group are free, while transitions between different groups share the same probability.
 """
 struct GroupedTransitions{T,W<:AbstractArray{T,3},B<:AbstractMatrix{T}} <: AbstractMatrix{T}
@@ -18,15 +23,6 @@ end
 
 # Constructors
 
-"""
-    GroupedTransitions(W, B, group_count, states_per_group)
-    GroupedTransitions(T, group_count, states_per_group)
-    GroupedTransitions(group_count, states_per_group)
-
-Construct a `GroupedTransitions` instance with `group_count` groups and `states_per_group` states per group.
-Type `T` specifies the element type (default `Float64`).
-Types `W` and `B` specify the array types (default `Array{T,3}` and `Matrix{T}`).
-"""
 function GroupedTransitions(
     W::Type{<:AbstractArray{T,3}},
     B::Type{<:AbstractMatrix{T}},

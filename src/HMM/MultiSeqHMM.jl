@@ -191,6 +191,13 @@ Get the sequence index of the single-sequence HMM within its parent `MultiSeqHMM
 """
 sequence_index(hmm::SingleSeqHMM) = hmm.sequence_index
 
+"""
+    emission(hmm::SingleSeqHMM)
+
+Get the emission distribution family for the single-sequence HMM.
+"""
+emission(hmm::SingleSeqHMM) = emissions(parent(hmm))[sequence_index(hmm)]
+
 hyperparameters(hmm::SingleSeqHMM) = hyperparameters(parent(hmm))
 
 state_count(hmm::SingleSeqHMM) = state_count(parent(hmm))

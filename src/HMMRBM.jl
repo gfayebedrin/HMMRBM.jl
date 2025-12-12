@@ -29,6 +29,7 @@ export inits
 export loginits
 export transitions
 export logtransitions
+export emission
 export emissions
 export emission_parameters
 export hyperparameters

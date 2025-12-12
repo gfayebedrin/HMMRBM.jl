@@ -22,6 +22,7 @@ HMMRBM.loginits
 HMMRBM.transitions
 HMMRBM.logtransitions
 HMMRBM.emissions
+HMMRBM.emission
 HMMRBM.emission_parameters
 HMMRBM.hyperparameters
 HMMRBM.parent

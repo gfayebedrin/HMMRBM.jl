@@ -120,7 +120,7 @@ Get the vector of emission distribution families for each sequence.
 emissions(hmm::MultiSeqHMM) = hmm.emissions
 
 """
-    emission_parameters(hmm::MultiSeqHMM)
+    emission_parameters(hmm)
 
 Get the shared emission parameters for the HMM.
 """

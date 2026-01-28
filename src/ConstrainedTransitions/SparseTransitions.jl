@@ -60,7 +60,7 @@ function baum_welch_transition_update!(trans::SparseTransitions{T}, logtrans::Sp
         val = expected[i, j]
         if i != j
             # Penalize off-diagonals
-            val = max(zero(T), val - trans.λ)
+            val = max(eps(T), val - trans.λ)
         end
         trans.transitions[i, j] = val
     end

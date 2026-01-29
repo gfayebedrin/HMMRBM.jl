@@ -55,21 +55,30 @@ end
 
 function baum_welch_transition_update!(trans::SparseTransitions{T}, logtrans::SparseTransitions, expected::AbstractMatrix) where {T}
     @argcheck size(trans) == size(expected) DimensionMismatch
-    rows, cols = size(expected)
-    for j in 1:cols, i in 1:rows
-        val = expected[i, j]
-        if i != j
-            # Penalize off-diagonals
-            val = max(eps(T), val - trans.λ)
-        end
-        trans.transitions[i, j] = val
-    end
-    for row in eachrow(trans.transitions)
-        if sum(row) == zero(T)
-            row .= one(T)
-        end
-        sum_to_one!(row)
-    end
+    @argcheck all(expected .>= zero(T)) ArgumentError("expected counts must be non-negative")
+
+    # rows, cols = size(expected)
+    # for j in 1:cols, i in 1:rows
+        # val = expected[i, j]
+        # if i != j
+        #     # Penalize off-diagonals
+        #     val = max(eps(T), val - trans.λ)
+        # end
+        # trans.transitions[i, j] = val
+    # end
+    # for row in eachrow(trans.transitions)
+    #     if sum(row) == zero(T)
+    #         row .= one(T)
+    #     end
+    #     sum_to_one!(row)
+    # end
+
+    usual_update = expected ./ sum(expected, dims=2)
+    penalized_update = usual_update .^ trans.λ
+    sum_to_one!.(eachrow(penalized_update))
+
+    trans.transitions .= penalized_update
+
     logtrans.transitions .= log.(trans.transitions)
     return nothing
 end

@@ -71,6 +71,15 @@ struct MultiSeqHMM{T,F,AV,AM,Aθ} <: AbstractVector{SingleSeqHMM{MultiSeqHMM{T,F
         @argcheck eltype(first(inits)) == eltype(first(transitions)) == eltype(θ) "Element types of inits, transitions, θ must match"
         @argcheck typeof(first(inits)) <: AbstractArray && typeof(first(transitions)) <: AbstractArray "Init and transition arrays must be concrete AbstractArrays"
 
+        # --- Valid probability checks ---
+        for (s, π) in enumerate(inits)
+            @argcheck HiddenMarkovModels.valid_prob_vec(π) "Init vector $s is not a valid probability vector"
+        end
+        for (s, A_mat) in enumerate(transitions)
+            @argcheck HiddenMarkovModels.valid_trans_mat(A_mat) "Transition matrix $s is not a valid transition matrix"
+        end
+
+
         # --- Log versions ---
         loginits = [log.(π) for π in inits]
         logtransitions = [log.(trans) for trans in transitions]

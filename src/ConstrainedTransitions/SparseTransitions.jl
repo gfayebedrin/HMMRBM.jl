@@ -41,9 +41,11 @@ state_count(A::SparseTransitions) = size(A.transitions, 1)
 
 Base.size(A::SparseTransitions) = size(A.transitions)
 Base.eltype(::Type{SparseTransitions{T}}) where {T} = T
-Base.IndexStyle(::Type{<:SparseTransitions}) = IndexCartesian()
+Base.IndexStyle(::Type{<:SparseTransitions{T, M}}) where {T, M} = IndexStyle(M)
 Base.getindex(A::SparseTransitions, i::Int, j::Int) = getindex(A.transitions, i, j)
+Base.getindex(A::SparseTransitions, i::Int) = getindex(A.transitions, i)
 Base.iterate(A::SparseTransitions) = iterate(A.transitions)
+Base.iterate(A::SparseTransitions, state) = iterate(A.transitions, state)
 Base.copy(A::SparseTransitions) = SparseTransitions(copy(A.transitions), A.λ)
 
 function _broadcast(f, A::SparseTransitions)

@@ -15,20 +15,20 @@ using HMMRBM:
     transitions
 
 @testset "AnnealedTransitions constructors and validation" begin
-    λ = 0.2
-    trans = AnnealedTransitions(3, λ)
+    β = 0.2
+    trans = AnnealedTransitions(3, β)
 
     @test state_count(trans) == 3
     @test size(trans) == (3, 3)
     @test eltype(trans) == Float64
     @test all(==(1 / 3), trans.transitions)
-    @test trans.λ == λ
+    @test trans.β == β
 
-    typed = AnnealedTransitions(Float32, 2, λ)
+    typed = AnnealedTransitions(Float32, 2, β)
     @test eltype(typed) == Float32
     @test typed.transitions isa Matrix{Float32}
 
-    explicit = AnnealedTransitions([0.6 0.4; 0.25 0.75], λ)
+    explicit = AnnealedTransitions([0.6 0.4; 0.25 0.75], β)
     @test explicit[1, 2] == 0.4
     @test explicit[2, 1] == 0.25
 end
@@ -38,18 +38,18 @@ end
 
     doubled = broadcast(x -> 2x, base)
     @test doubled.transitions ≈  2 .* base.transitions
-    @test doubled.λ == base.λ
+    @test doubled.β == base.β
 
     copied = copy(base)
     @test copied !== base
     @test copied.transitions == base.transitions
-    @test copied.λ == base.λ
+    @test copied.β == base.β
 end
 
 @testset "AnnealedTransitions Baum-Welch update" begin
-    λ = 2.0
-    trans = AnnealedTransitions([0.5 0.5; 0.5 0.5], λ)
-    logtrans = AnnealedTransitions([0.5 0.5; 0.5 0.5], λ)
+    β = 2.0
+    trans = AnnealedTransitions([0.5 0.5; 0.5 0.5], β)
+    logtrans = AnnealedTransitions([0.5 0.5; 0.5 0.5], β)
     expected = [
         6.0 1.0;
         2.0 3.0

@@ -58,6 +58,9 @@ export states_per_group
 include("ConstrainedTransitions/SparseTransitions.jl")
 export SparseTransitions
 
+include("ConstrainedTransitions/AnnealedTransitions.jl")
+export AnnealedTransitions
+
 include("ConstrainedTransitions/broadcasting.jl")
 
 include("hmm.jl")

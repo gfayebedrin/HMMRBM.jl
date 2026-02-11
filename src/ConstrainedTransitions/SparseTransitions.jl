@@ -41,7 +41,7 @@ state_count(A::SparseTransitions) = size(A.transitions, 1)
 
 Base.size(A::SparseTransitions) = size(A.transitions)
 Base.eltype(::Type{SparseTransitions{T}}) where {T} = T
-Base.IndexStyle(::Type{<:SparseTransitions{T, M}}) where {T, M} = IndexStyle(M)
+Base.IndexStyle(::Type{<:SparseTransitions{T,M}}) where {T,M} = IndexStyle(M)
 Base.getindex(A::SparseTransitions, i::Int, j::Int) = getindex(A.transitions, i, j)
 Base.getindex(A::SparseTransitions, i::Int) = getindex(A.transitions, i)
 Base.iterate(A::SparseTransitions) = iterate(A.transitions)
@@ -52,6 +52,17 @@ function _broadcast(f, A::SparseTransitions)
     return SparseTransitions(f.(A.transitions), A.λ)
 end
 
+Base.BroadcastStyle(::Type{<:SparseTransitions}) = Base.Broadcast.ArrayStyle{SparseTransitions}()
+
+function Base.copy(bc::Base.Broadcast.Broadcasted{Base.Broadcast.ArrayStyle{SparseTransitions}})
+    @argcheck length(bc.args) == 1 "broadcast over SparseTransitions only supports unary functions"
+    arg = first(bc.args)
+    A = arg isa SparseTransitions ? arg :
+        arg isa Base.Broadcast.Extruded ? arg.value :
+        throw(ArgumentError("Unsupported broadcast argument type $(typeof(arg))"))
+    return _broadcast(bc.f, A)
+end
+
 
 # Baum-Welch update
 
@@ -59,27 +70,21 @@ function baum_welch_transition_update!(trans::SparseTransitions{T}, logtrans::Sp
     @argcheck size(trans) == size(expected) DimensionMismatch
     @argcheck all(expected .>= zero(T)) ArgumentError("expected counts must be non-negative")
 
-    # rows, cols = size(expected)
-    # for j in 1:cols, i in 1:rows
-        # val = expected[i, j]
-        # if i != j
-        #     # Penalize off-diagonals
-        #     val = max(eps(T), val - trans.λ)
-        # end
-        # trans.transitions[i, j] = val
-    # end
-    # for row in eachrow(trans.transitions)
-    #     if sum(row) == zero(T)
-    #         row .= one(T)
-    #     end
-    #     sum_to_one!(row)
-    # end
-
-    usual_update = expected ./ sum(expected, dims=2)
-    penalized_update = usual_update .^ trans.λ
-    sum_to_one!.(eachrow(penalized_update))
-
-    trans.transitions .= penalized_update
+    rows, cols = size(expected)
+    for j in 1:cols, i in 1:rows
+        val = expected[i, j]
+        if i != j
+            # Penalize off-diagonals
+            val = max(eps(T), val - trans.λ)
+        end
+        trans.transitions[i, j] = val
+    end
+    for row in eachrow(trans.transitions)
+        if sum(row) == zero(T)
+            row .= one(T)
+        end
+        sum_to_one!(row)
+    end
 
     logtrans.transitions .= log.(trans.transitions)
     return nothing

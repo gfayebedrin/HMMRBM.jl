@@ -1,4 +1,4 @@
-const ConstrainedTransitions = Union{GroupedTransitions, SparseTransitions}
+const ConstrainedTransitions = Union{GroupedTransitions, SparseTransitions, AnnealedTransitions}
 
 function _broadcast end
 

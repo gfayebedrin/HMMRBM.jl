@@ -36,3 +36,25 @@ HMMRBM.state_count(::HMMRBM.SparseTransitions)
 ```@docs
 HMMRBM.baum_welch_transition_update!(::HMMRBM.SparseTransitions, ::HMMRBM.SparseTransitions, ::AbstractMatrix)
 ```
+
+# Annealed transition matrices
+
+`AnnealedTransitions` represents a row-stochastic transition matrix with a parameter β that controls the inverse temperature of the model during training. Lower values lead to more uniform transitions; higher values to sparser transitions.
+
+## Constructors
+
+```@docs
+HMMRBM.AnnealedTransitions
+```
+
+## Accessors
+
+```@docs
+HMMRBM.state_count(::HMMRBM.AnnealedTransitions)
+```
+
+## Training support
+
+```@docs
+HMMRBM.baum_welch_transition_update!(::HMMRBM.AnnealedTransitions, ::HMMRBM.AnnealedTransitions, ::AbstractMatrix)
+```

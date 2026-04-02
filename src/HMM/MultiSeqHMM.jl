@@ -207,6 +207,8 @@ Get the emission distribution family for the single-sequence HMM.
 """
 emission(hmm::SingleSeqHMM) = emissions(parent(hmm))[sequence_index(hmm)]
 
+emission_parameters(hmm::SingleSeqHMM) = emission_parameters(parent(hmm))
+
 hyperparameters(hmm::SingleSeqHMM) = hyperparameters(parent(hmm))
 
 state_count(hmm::SingleSeqHMM) = state_count(parent(hmm))

@@ -15,6 +15,7 @@ makedocs(
         "Sparse transitions" => "SparseTransitions.md",
         "RBM emissions" => "RBMdist.md",
         "Internal utilities" => "internal.md",
+        "License" => "license.md",
     ],
 )
 

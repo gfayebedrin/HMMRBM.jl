@@ -1,6 +1,6 @@
 name = "HMMRBM"
 uuid = "bfa31696-7586-4689-9387-6c23d6d4ad35"
-version = "1.0.0"
+version = "1.0.1"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -30,7 +30,7 @@ HDF5 = "0.17"
 HiddenMarkovModels = "0.6, 0.7"
 Optim = "1.13.2"
 Random = "1"
-RestrictedBoltzmannMachines = "5"
+RestrictedBoltzmannMachines = "3.8, 4, 5"
 StatsAPI = "1.6, 1.7"
 StatsFuns = "1"
 julia = "1.9"

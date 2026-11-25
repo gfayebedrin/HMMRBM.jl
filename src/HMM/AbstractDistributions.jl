@@ -49,6 +49,9 @@ update for a single HMM state.
 Returns a tuple of two functions `(f, grad!)`
 where `f(x)` returns the objective value at `x`,
 and `grad!(∇ₓf, x)` fills `∇ₓf` with the gradient at `x`.
+
+When Julia runs with several threads, the states are fitted in parallel, so
+functions returned by different calls must not share mutable state.
 """
 function baum_value_gradient end
 baum_value_gradient(dist::Distribution, obs_seq, γ) = baum_value_gradient(family(dist), obs_seq, γ)

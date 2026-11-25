@@ -22,6 +22,8 @@ function HiddenMarkovModels.baum_welch!(
     max_iterations::Integer,
     loglikelihood_increasing::Bool,
     callback=(x -> nothing),
+    optimizer=Optim.LBFGS(),
+    options=Optim.Options(),
 )
     controls = [fill(nothing, length(obs_sequences[s])) for s in eachindex(obs_sequences)]
     seq_ends = [(length(obs_sequences[s]),) for s in eachindex(obs_sequences)]
@@ -33,7 +35,7 @@ function HiddenMarkovModels.baum_welch!(
         end
 
         push!(logL_evolution, logdensityof(hmm) + sum(sum(fs.logL) for fs in fb_storages))
-        fit!(hmm, fb_storages, obs_sequences)
+        fit!(hmm, fb_storages, obs_sequences; optimizer, options)
         if baum_welch_has_converged(logL_evolution; atol, loglikelihood_increasing)
             break
         end
@@ -53,6 +55,7 @@ Return a tuple `(hmm_est, loglikelihood_evolution)` where `hmm_est` is the estim
 - `atol`: minimum loglikelihood increase at an iteration of the algorithm (otherwise the algorithm is deemed to have converged)
 - `max_iterations`: maximum number of iterations of the algorithm
 - `loglikelihood_increasing`: whether to throw an error if the loglikelihood decreases
+- `optimizer`, `options`: `Optim` optimizer and options used to fit the emission parameters of each state
 """
 function HiddenMarkovModels.baum_welch(
     hmm_guess::MultiSeqHMM,
@@ -61,6 +64,8 @@ function HiddenMarkovModels.baum_welch(
     max_iterations=100,
     loglikelihood_increasing=true,
     callback=(x -> nothing),
+    optimizer=Optim.LBFGS(),
+    options=Optim.Options(),
 )
     hmm = deepcopy(hmm_guess)
 
@@ -84,6 +89,8 @@ function HiddenMarkovModels.baum_welch(
         max_iterations,
         loglikelihood_increasing,
         callback,
+        optimizer,
+        options,
     )
     return hmm, logL_evolution
 end
@@ -108,7 +115,9 @@ end
 function StatsAPI.fit!(
     hmm::MultiSeqHMM,
     fb_storages::Vector{<:HiddenMarkovModels.ForwardBackwardStorage},
-    obs_sequences::AbstractVector{<:AbstractVector},
+    obs_sequences::AbstractVector{<:AbstractVector};
+    optimizer=Optim.LBFGS(),
+    options=Optim.Options(),
 )
     γs = getproperty.(fb_storages, :γ)
     ξs = getproperty.(fb_storages, :ξ)
@@ -132,11 +141,13 @@ function StatsAPI.fit!(
     end
 
     # Fit observations
-    for j in 1:state_count(hmm)
+    Threads.@threads :dynamic for j in 1:state_count(hmm)
         fit!(
             distribution.(emissions(hmm), Ref(selectdim(emission_parameters(hmm), 1, j))),
             obs_sequences,
-            view.(γs, j, :)
+            view.(γs, j, :);
+            optimizer,
+            options,
         )
     end
 
@@ -163,7 +174,9 @@ end
 function StatsAPI.fit!(
     dists::AbstractVector,
     obs_sequences::AbstractVector{<:AbstractVector},
-    γsⱼ::AbstractVector{<:AbstractVector}
+    γsⱼ::AbstractVector{<:AbstractVector};
+    optimizer=Optim.LBFGS(),
+    options=Optim.Options(),
 )
     @argcheck length(dists) == length(obs_sequences) == length(γsⱼ) DimensionMismatch
 
@@ -190,7 +203,7 @@ function StatsAPI.fit!(
         end
     end
 
-    res = Optim.optimize(f, grad!, θ0, Optim.LBFGS())
+    res = Optim.optimize(f, grad!, θ0, optimizer, options)
 
     θ_param .= Optim.minimizer(res)
 

@@ -27,6 +27,13 @@ using HMMRBM
     @test value_forward ≥ base_value - 1e-8
     @test value_backward ≤ base_value + 1e-8
 
+    obs_mat = reduce(hcat, obs_seq)
+    expected_value = γ ⋅ vec(HMMRBM.log_P_v_given_h(rbm, obs_mat, h)) - 0.05 * sum(abs2, h)
+    expected_grad = sum(γ[t] * HMMRBM.∂ₕlog_P_v_given_h(rbm, rbm.w' * obs_seq[t], h) for t in eachindex(obs_seq)) .- 2 * 0.05 * h
+    @test f(copy(h)) ≈ expected_value
+    @test grad!(similar(h), copy(h)) ≈ expected_grad
+    @test f(copy(h)) == base_value
+
     hess_diag = diag(HMMRBM.∂ₕ²log_P_v_given_h(rbm, h))
     @test all(isfinite, hess_diag)
     @test all(hess_diag .<= 0)

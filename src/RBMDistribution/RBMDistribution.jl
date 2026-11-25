@@ -58,21 +58,43 @@ function distribution(dist::RBMEmissionFamily, hidden)
 end
 
 
+"""
+    baum_value_gradient(dist::RBMEmissionFamily, obs_seq, γⱼ)
+
+Objective and gradient of the Baum-Welch update of the hidden vector of one state.
+
+## Optimisation
+The `γⱼ`-weighted sums over time are computed once, so each evaluation costs
+`O(n_visible * n_hidden)` independently of the sequence length.
+"""
 function baum_value_gradient(dist::RBMEmissionFamily, obs_seq::AbstractVector, γⱼ::AbstractVector)
 
     obs_mat = obs_seq isa Base.Slices ? Base.parent(obs_seq) : reduce(hcat, obs_seq)
-    Wᵀv = rbm(dist).w' * obs_mat
-    Eᵥ = RestrictedBoltzmannMachines.energy(rbm(dist).visible, obs_mat)
+    r = rbm(dist)
+    Wᵀv̄ = r.w' * (obs_mat * γⱼ)
+    Ē = γⱼ ⋅ vec(RestrictedBoltzmannMachines.energy(r.visible, obs_mat))
+    Γ = sum(γⱼ)
 
-    out_f = similar(γⱼ)
-    out_∇ = similar(γⱼ, (length(rbm(dist).hidden), length(γⱼ)))
+    lasth = fill(convert(eltype(γⱼ), NaN), length(r.hidden))
+    inputs = similar(γⱼ, length(r.visible))
+    cumulants = similar(inputs)
+
+    function calculate_common!(h::Vector)
+        if h != lasth
+            copy!(lasth, h)
+            inputs .= RestrictedBoltzmannMachines.inputs_v_from_h(r, h)
+        end
+    end
 
     function f(h::Vector)
-        γⱼ ⋅ log_P_v_given_h!(out_f, rbm(dist), Eᵥ, Wᵀv, h) - l2(dist) * sum(abs2, h)
+        calculate_common!(h)
+        Wᵀv̄ ⋅ h - Ē - Γ * sum(cgfs!(cumulants, r.visible, inputs)) - l2(dist) * sum(abs2, h)
     end
 
     function grad!(∇ₕ::Vector, h::Vector)
-        ∇ₕ .= ∂ₕlog_P_v_given_h!(out_∇, rbm(dist), Wᵀv, h) * γⱼ .- 2 * l2(dist) * h
+        calculate_common!(h)
+        mean_v = RestrictedBoltzmannMachines.mean_from_inputs(r.visible, inputs)
+        ∇ₕ .= Wᵀv̄ .- Γ .* (r.w' * mean_v) .- 2 * l2(dist) .* h
     end
 
     return f, grad!
